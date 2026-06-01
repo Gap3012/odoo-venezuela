@@ -24,6 +24,7 @@
 4. [Fichas Detalladas de Cada Módulo](#4-fichas-detalladas-de-cada-módulo)
 5. [Árbol de Dependencias](#5-árbol-de-dependencias)
 6. [Qué cubre y qué no cubre esta localización](#6-qué-cubre-y-qué-no-cubre-esta-localización)
+7. [Checklist de Pruebas por Módulo](#7-checklist-de-pruebas-por-módulo)
 
 ---
 
@@ -556,6 +557,390 @@ base / web / account / account_accountant
 | **Nómina venezolana** | No hay módulo de nómina local (IVSS, FAOV, LCT, etc.) |
 | **Libro de compras y ventas (BCV/SENIAT)** | No se observó reporte de libro de compras/ventas estándar |
 | **Impuesto municipal a las actividades económicas (pago)** | Existe retención pero no módulo de declaración municipal |
+
+---
+
+---
+
+## 7. Checklist de Pruebas por Módulo
+
+Las pruebas están ordenadas igual que el orden de instalación. Cada sección asume que los módulos anteriores ya fueron instalados y probados.
+
+---
+
+### `l10n_ve_base`
+
+> Módulo técnico — no tiene UI propia. Verificar que la instalación no produzca errores.
+
+- [ ] El módulo instala sin errores en el log del servidor
+- [ ] En **Ajustes → Técnico → Vistas** existen vistas con módulo `l10n_ve_base`
+- [ ] En **Ajustes** aparece alguna sección con configuraciones de Venezuela (aunque estén vacías)
+
+---
+
+### `l10n_ve_rate`
+
+- [ ] Ir a **Contabilidad → Configuración → Divisas** — USD debe aparecer activa
+- [ ] Abrir USD y crear una tasa de cambio manual (ej. 1 USD = 36 VES)
+- [ ] Verificar que el campo de tasa queda guardado correctamente
+- [ ] En **Ajustes → Contabilidad** debe aparecer sección de tipo de cambio Venezuela
+- [ ] Confirmar que VES (Bolívar Soberano) está disponible como divisa
+
+---
+
+### `l10n_ve_location`
+
+- [ ] Ir a **Contactos → Configuración → Municipios** — debe listar los 335 municipios de Venezuela
+- [ ] Ir a **Contactos → Configuración → Parroquias** — debe listar las parroquias
+- [ ] Ir a **Contactos → Configuración → Ciudades** — debe listar ciudades venezolanas
+- [ ] Crear un contacto y verificar que los campos Municipio/Parroquia están disponibles y filtran correctamente por estado
+
+---
+
+### `l10n_ve_contact`
+
+- [ ] Crear un contacto de tipo Empresa y verificar que aparece el campo **Prefijo RIF** (V, E, J, G, P)
+- [ ] Ingresar un RIF con formato correcto (ej. `J-12345678-9`) — debe aceptarlo
+- [ ] Ingresar un RIF con formato incorrecto — debe mostrar error de validación
+- [ ] Verificar que el campo **Tipo de Contribuyente** está disponible (Ordinario, Especial, Exento, etc.)
+- [ ] En **Ajustes → Empresa** verificar que el RIF de la empresa se puede configurar con prefijo
+- [ ] Crear un contacto persona natural con prefijo `V` y uno jurídico con `J` — ambos deben guardarse
+
+---
+
+### `l10n_binaural`
+
+- [ ] Ir a **Contabilidad → Configuración → Plan de Cuentas** — debe mostrar el plan de cuentas venezolano completo (activos, pasivos, patrimonio, ingresos, gastos)
+- [ ] Verificar que existen cuentas de IVA (ej. IVA por pagar, IVA soportado)
+- [ ] Ir a **Contabilidad → Configuración → Impuestos** — deben existir: IVA 16%, IVA 8%, Exento, Cero
+- [ ] Ir a **Contabilidad → Configuración → Diarios** — deben existir al menos: Ventas, Compras, Banco, Caja
+- [ ] Verificar que la empresa tiene asignado el plan de cuentas en **Ajustes → Empresa**
+
+---
+
+### `od_journal_sequence`
+
+- [ ] Ir a **Contabilidad → Configuración → Diarios**, abrir el diario de Ventas
+- [ ] Verificar que existe la pestaña o campo **Secuencia** con configuración de prefijo y siguiente número
+- [ ] Crear una factura y confirmar — el número asignado debe seguir la secuencia del diario
+- [ ] Crear una factura en otro diario — debe tener numeración independiente al primero
+- [ ] Cambiar el prefijo de secuencia de un diario y confirmar una nueva factura — debe usar el nuevo prefijo
+
+---
+
+### `l10n_ve_accountant`
+
+- [ ] Ir a **Contabilidad → Configuración → Unidad Tributaria** — debe existir el modelo con el valor actual de la UT
+- [ ] Crear un valor de UT (ej. 0,02 VES) y guardar
+- [ ] Crear una factura de cliente en USD — verificar que aparece el campo **Tasa de Cambio** en el encabezado
+- [ ] El campo `Fecha de Factura (Display)` debe mostrarse correctamente en zona horaria Venezuela
+- [ ] Ir a **Contabilidad → Reportes** — verificar que existen reportes venezolanos disponibles
+- [ ] Crear un pago en USD — verificar que el sistema calcula el equivalente en VES automáticamente
+- [ ] En **Ajustes → Contabilidad** verificar las configuraciones venezolanas (contribuyente especial, RIF empresa, etc.)
+- [ ] Verificar que `res.company` tiene el campo **Contribuyente Especial** y se puede marcar
+
+---
+
+### `l10n_ve_invoice`
+
+- [ ] Crear una factura de cliente, confirmarla — debe aparecer el campo **Número de Control** con correlativo automático
+- [ ] Verificar que el número de control sigue la secuencia del diario (ej. `00-00000001`)
+- [ ] Crear una segunda factura — el número de control debe ser `00-00000002`
+- [ ] Ir al diario de ventas y configurar un prefijo de control diferente — nueva factura debe usar ese prefijo
+- [ ] Crear una factura de proveedor — verificar que aparece el campo **Fecha de Recepción de Factura**
+- [ ] En una factura de importación, verificar que el campo **Declaración Única de Aduanas** está disponible
+- [ ] Imprimir una factura con el reporte **Factura en Formato Libre** — debe mostrar logo, RIF, número de control, datos del cliente y detalle
+- [ ] Crear una Nota de Débito desde una factura confirmada — debe generar su propio número de control
+
+---
+
+### `l10n_ve_tax_payer`
+
+- [ ] Abrir un contacto proveedor e ir a la pestaña **Contabilidad** (o sección tributaria)
+- [ ] Verificar que existen los campos: **Retiene IVA**, **Porcentaje de Retención IVA**, **Retiene ISLR**, **Retiene Municipal**
+- [ ] Marcar un proveedor como **Contribuyente Especial** con retención de IVA al 75% — guardar
+- [ ] Verificar que el flag persiste y es visible al reabrir el registro
+- [ ] Crear otro proveedor como ordinario sin retenciones — verificar diferencia en flags
+
+---
+
+### `l10n_ve_payment_extension`
+
+**Retención IVA:**
+- [ ] Configurar un proveedor como Contribuyente Especial (retiene IVA 75%)
+- [ ] Crear una factura de ese proveedor por 100 USD + IVA 16% → base IVA = 16 USD → retención = 12 USD
+- [ ] Al registrar el pago, verificar que aparece el botón/sección de **Crear Retención IVA**
+- [ ] Crear la retención — debe generarse un `account.retention` con número secuencial
+- [ ] Imprimir el **Comprobante de Retención IVA (ARCV)** — debe mostrar datos de empresa, proveedor, factura y monto retenido
+- [ ] Confirmar la retención y verificar el asiento contable generado
+
+**Retención ISLR:**
+- [ ] Ir a **Contabilidad → Configuración → Conceptos de Retención ISLR** — deben existir conceptos predefinidos (honorarios, servicios, etc.)
+- [ ] Marcar un proveedor con **Retiene ISLR**
+- [ ] Crear factura de ese proveedor por servicio profesional
+- [ ] Al pagar, crear la retención ISLR con el concepto correspondiente — verificar cálculo de alícuota
+- [ ] Imprimir el ARCV de ISLR — debe mostrar acumulado de honorarios si aplica
+
+**Retención Municipal:**
+- [ ] Ir a **Contabilidad → Configuración → Actividades Económicas** — verificar que existen actividades
+- [ ] Asignar una actividad económica al proveedor
+- [ ] Crear factura y retención municipal — verificar cálculo según alícuota de la actividad
+- [ ] Imprimir comprobante de retención municipal
+
+---
+
+### `l10n_ve_igtf`
+
+- [ ] Ir a **Contabilidad → Configuración → Diarios**, abrir el diario de Banco en USD
+- [ ] Verificar que existe el campo **Aplica IGTF** — marcarlo
+- [ ] Configurar la **Cuenta Puente IGTF** en **Ajustes → Contabilidad**
+- [ ] Crear una factura de cliente en USD y registrar el pago por ese diario bancario USD
+- [ ] Verificar que al confirmar el pago, se genera automáticamente el cargo del 3% de IGTF
+- [ ] Revisar el asiento contable del pago — debe tener una línea adicional de IGTF
+- [ ] Crear un anticipo de cliente: crear pago por adelantado sin factura — debe marcarse como `is_advance_move`
+- [ ] Verificar que el anticipo queda disponible para aplicar a futuras facturas
+- [ ] En la factura impresa (**Formato Libre**), verificar que aparece la línea de IGTF cuando aplica
+
+---
+
+### `l10n_ve_filter_partner`
+
+> Módulo técnico. Verificar comportamiento en formularios.
+
+- [ ] Al crear una factura de cliente, el campo **Cliente** solo muestra contactos marcados como clientes
+- [ ] Al crear una factura de proveedor, el campo **Proveedor** solo muestra contactos marcados como proveedores
+- [ ] Crear un contacto que sea solo proveedor — no debe aparecer en el selector de clientes de facturas de venta
+
+---
+
+### `l10n_ve_stock`
+
+- [ ] Ir a **Inventario → Productos** — verificar que los productos tienen campo de **Precio en Moneda Extranjera**
+- [ ] Ingresar precio en USD a un producto — verificar que se calcula el equivalente en VES según tasa
+- [ ] Crear un ajuste de inventario — verificar que la valoración muestra VES
+- [ ] Ir a **Inventario → Reportes → Valoración de Inventario** — debe mostrar valores en VES con nota de tasa de cambio
+- [ ] Crear una transferencia interna — verificar que los campos venezolanos están presentes
+- [ ] Imprimir etiqueta de empaque desde una transferencia — debe generarse correctamente
+
+---
+
+### `l10n_ve_sale`
+
+- [ ] Crear una orden de venta — verificar que el selector de cliente usa el filtro venezolano (solo clientes)
+- [ ] Agregar una línea con producto en USD — verificar que la línea muestra precio en USD y equivalente en VES
+- [ ] Cambiar la tasa de cambio y verificar que los precios se actualizan (o el cron lo hace)
+- [ ] Confirmar la orden y crear la factura — verificar que hereda número de control y datos venezolanos
+- [ ] Imprimir el reporte de la orden de venta — debe mostrar datos venezolanos correctamente
+- [ ] Verificar que el campo **Almacén** en la orden usa el almacén venezolano configurado
+
+---
+
+### `l10n_ve_purchase`
+
+- [ ] Crear una orden de compra — verificar que el selector de proveedor funciona correctamente
+- [ ] Confirmar la orden y crear la factura de proveedor — verificar que hereda fecha de recepción
+- [ ] Verificar que los grupos de seguridad de compras están correctamente configurados
+
+---
+
+### `l10n_ve_stock_purchase`
+
+- [ ] Crear una orden de compra con productos en inventario
+- [ ] Confirmar la orden — debe crearse automáticamente un recibo en almacén
+- [ ] Validar el recibo — verificar que el movimiento de inventario usa los campos venezolanos
+- [ ] Crear la factura desde la orden de compra confirmada — verificar integración completa
+
+---
+
+### `l10n_ve_stock_account`
+
+- [ ] Ir a **Inventario → Configuración → Razones de Transferencia** — deben existir razones predefinidas (Venta, Traslado, Donación, etc.)
+- [ ] Crear una transferencia de almacén y asignarle una razón
+- [ ] Validar la transferencia — debe generarse o vincularse una **Guía de Despacho**
+- [ ] Abrir la guía de despacho — verificar número secuencial, campos de transportista, origen y destino
+- [ ] Imprimir la guía de despacho — debe ser un documento imprimible con formato legal
+- [ ] Configurar una **Alerta de Autoconsumo** en **Inventario → Configuración → Alertas**
+- [ ] Simular un movimiento que dispare la alerta — verificar que la notificación aparece
+- [ ] Verificar que la factura generada desde la guía de despacho tiene número de control correcto
+
+---
+
+### `l10n_ve_stock_reports`
+
+- [ ] Ir a **Inventario → Reportes → Libro de Inventario**
+- [ ] Seleccionar un período (ej. el mes actual) y ejecutar el reporte
+- [ ] Verificar que el reporte muestra movimientos de entrada, salida y saldo por producto
+- [ ] Exportar o imprimir el reporte — debe ser apto para presentación fiscal
+
+---
+
+### `l10n_ve_pos`
+
+- [ ] Ir a **Punto de Venta → Configuración → Ajustes** — verificar campos venezolanos (almacén, tasa de cambio)
+- [ ] Configurar el POS con la tasa de cambio del día
+- [ ] Abrir una sesión de POS
+- [ ] Buscar un cliente por **RIF** desde el POS — debe encontrar al contacto venezolano
+- [ ] Crear una venta con pago en USD — verificar que el sistema muestra el equivalente en VES
+- [ ] Crear una venta con pago en VES — flujo normal
+- [ ] Cerrar la sesión de POS — verificar que el cierre muestra resumen por tipo de pago y moneda
+- [ ] Generar el **Reporte de Pagos** de la sesión — debe mostrar desgloses venezolanos
+
+---
+
+### `l10n_ve_pos_igtf`
+
+- [ ] Configurar un método de pago en USD en el POS
+- [ ] Abrir el POS y crear una venta
+- [ ] Seleccionar pago en USD — debe aparecer el cálculo del IGTF (3%) automáticamente
+- [ ] Verificar que el total cobrado incluye el IGTF
+- [ ] Revisar la orden cerrada — el IGTF debe estar registrado como línea separada en el pago
+
+---
+
+### `l10n_ve_stock_reports`
+
+- [ ] Ir al menú de reportes de inventario
+- [ ] Ejecutar el **Libro de Inventario** para un período
+- [ ] Verificar que incluye productos con sus movimientos de entrada/salida y saldo final
+- [ ] Confirmar que los valores están en VES con la tasa del período
+
+---
+
+### `account_fiscal_year_closing`
+
+- [ ] Ir a **Contabilidad → Contabilidad → Cierres de Año Fiscal**
+- [ ] Verificar que existen **Plantillas de Cierre** precargadas
+- [ ] Crear un nuevo cierre de año fiscal para el período anterior
+- [ ] Ejecutar el paso "Preparar" — debe validar que no hay asientos pendientes de confirmar
+- [ ] Revisar los asientos de cierre propuestos — deben incluir traslado de resultados y apertura de balance
+
+---
+
+### `l10n_ve_account_fiscalyear_closing`
+
+- [ ] Abrir el cierre fiscal creado anteriormente — verificar que tiene campos venezolanos (RIF empresa, tasa de cambio de cierre)
+- [ ] Verificar que las plantillas de cierre venezolanas están disponibles
+- [ ] Ejecutar el cierre completo (preparar → confirmar → validar)
+- [ ] Verificar que los asientos generados tienen la tasa de cambio correcta al cierre del período
+
+---
+
+### `l10n_ve_fiscal_lock_days`
+
+- [ ] Ir a **Contabilidad → Configuración → Ajustes** — sección de bloqueo fiscal
+- [ ] Configurar una fecha de bloqueo de facturas (ej. bloquear hasta el 31 del mes anterior)
+- [ ] Intentar crear y confirmar una factura con fecha anterior al bloqueo — debe mostrar error de período bloqueado
+- [ ] Cambiar la fecha de bloqueo usando el wizard **Cambiar Fecha de Bloqueo** — debe requerir justificación
+- [ ] Verificar que el cambio de fecha queda registrado en el log de auditoría
+
+---
+
+### `l10n_ve_ref_bank`
+
+- [ ] Ir a **Contabilidad → Configuración → Diarios**, abrir un diario de tipo Banco
+- [ ] Verificar que existen campos de configuración de referencia bancaria (prefijo, longitud)
+- [ ] Configurar el diario con un prefijo y longitud de referencia (ej. 20 dígitos)
+- [ ] Registrar un pago con ese diario usando una referencia válida — debe aceptarla
+- [ ] Registrar un pago con referencia de longitud incorrecta — debe mostrar error de validación
+
+---
+
+### `l10n_ve_suggested_amount`
+
+- [ ] Crear una factura de cliente en USD con saldo pendiente
+- [ ] Ir a **Registrar Pago** desde la factura
+- [ ] En el wizard de pago, verificar que aparece el campo **Monto Sugerido** con el equivalente en VES
+- [ ] Cambiar la tasa de cambio en el wizard — el monto sugerido debe recalcularse
+- [ ] Confirmar el pago con el monto sugerido — la factura debe quedar saldada
+
+---
+
+### `l10n_ve_auditlog`
+
+- [ ] Crear y confirmar una factura
+- [ ] Modificar algún campo editable (ej. nota) y guardar
+- [ ] Ir al chatter de la factura — debe mostrar el tracking del cambio con valor anterior y nuevo
+- [ ] Registrar un pago y luego intentar modificarlo
+- [ ] Ir a **Contabilidad → Técnico → Logs de Auditoría** (si el menú existe) — verificar registros
+- [ ] Verificar que los cambios en `account.payment` también quedan registrados
+
+---
+
+### `l10n_ve_donation`
+
+- [ ] Ir a **Ajustes → Contabilidad** — verificar configuración de donaciones (cuenta contable de donación)
+- [ ] Crear una orden de venta y marcarla como **Donación**
+- [ ] Verificar que solo se puede seleccionar un cliente tipo Empresa (no persona natural)
+- [ ] Confirmar la orden y validar el despacho — el movimiento de inventario debe usar la lógica de donación
+- [ ] Crear la factura de donación — debe marcarse automáticamente como donación
+- [ ] Imprimir el **Certificado de Donación** — debe mostrar datos del donante, descripción de bienes y montos
+
+---
+
+### `l10n_ve_price_list`
+
+- [ ] Ir a **Ventas → Configuración → Listas de Precio** — crear una lista en USD
+- [ ] Asignar la lista de precio a un cliente
+- [ ] Crear una orden de venta para ese cliente — verificar que los precios se muestran en USD
+- [ ] En la factura generada, verificar que la lista de precio y moneda están correctamente reflejadas
+- [ ] Abrir un producto — verificar que la vista de lista de precio venezolana muestra precio en moneda extranjera
+
+---
+
+### `l10n_ve_currency_rate_live` *(opcional)*
+
+- [ ] Ir a **Contabilidad → Configuración → Divisas**
+- [ ] Hacer clic en **Actualizar Tasas** — el sistema debe consultar el BCV y actualizar la tasa del USD
+- [ ] Verificar que la tasa actualizada es razonable (tasa BCV oficial del día)
+- [ ] Configurar la actualización automática (cron) y verificar que está activa
+- [ ] Revisar el historial de tasas de USD — deben aparecer las actualizaciones automáticas
+
+---
+
+### `l10n_ve_iot_mf` *(opcional — requiere hardware TFHKA)*
+
+- [ ] Configurar la IP y token de la máquina fiscal en **Ajustes → Contabilidad**
+- [ ] Ir a **IoT → Dispositivos** — verificar que aparece la máquina fiscal como dispositivo
+- [ ] Marcar el diario de ventas como **Con Máquina Fiscal**
+- [ ] Mapear los impuestos IVA 16% y 8% a los códigos de la máquina fiscal
+- [ ] Crear y confirmar una factura de cliente — el sistema debe enviarla a la máquina fiscal
+- [ ] Verificar que la factura recibe el número de secuencia fiscal de la máquina
+- [ ] Ejecutar el **Reporte Z** al final del día — la máquina debe emitir el cierre diario
+
+---
+
+### `l10n_ve_invoice_digital` *(opcional — requiere `l10n_ve_iot_mf`)*
+
+- [ ] En **Ajustes → Contabilidad** activar **Retenciones Automáticas en Factura Digital**
+- [ ] Crear una factura para un proveedor con retención de IVA configurada
+- [ ] Confirmar la factura — las retenciones deben generarse automáticamente sin intervención manual
+- [ ] Verificar que el almacén de la factura tiene máquina fiscal asociada (requisito previo)
+- [ ] Si el almacén no tiene máquina fiscal, debe aparecer una alerta de advertencia
+
+---
+
+### `l10n_ve_pos_mf` *(opcional — requiere `l10n_ve_iot_mf` + `l10n_ve_pos`)*
+
+- [ ] En configuración del POS, asignar la máquina fiscal al punto de venta
+- [ ] Abrir sesión de POS y realizar una venta
+- [ ] Al cerrar la venta, verificar que se envía a la máquina fiscal y regresa con número fiscal
+- [ ] Verificar que la orden del POS muestra el número de secuencia fiscal
+- [ ] Ir a **Reportes → Libro de Ventas Fiscal** — debe mostrar ventas con números fiscales correlativos
+- [ ] Ejecutar el Reporte Z del POS al cerrar la sesión
+
+---
+
+### `l10n_ve_invoice_loyalty` *(opcional)*
+
+- [ ] Ir a **eCommerce / Ventas → Programas de Fidelización** — crear un programa con puntos
+- [ ] Asignar el programa a un cliente
+- [ ] Crear una factura para ese cliente — debe aparecer sección para aplicar puntos/rewards
+- [ ] Aplicar un reward — verificar que se genera descuento o línea de ajuste en la factura
+- [ ] Confirmar la factura — el reward debe registrarse en el programa de fidelización
+
+---
+
+*Checklist generado en base al análisis de código fuente. Los valores numéricos (porcentajes, montos) son ejemplos ilustrativos — usar los valores reales configurados en producción.*
 
 ---
 
