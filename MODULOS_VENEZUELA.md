@@ -11,16 +11,16 @@
 1. [Ecosistema General](#1-ecosistema-general)
 2. [Orden de Instalación Recomendado](#2-orden-de-instalación-recomendado)
 3. [Módulos por Capa](#3-módulos-por-capa)
-   - [Capa 1 — Infraestructura Base](#capa-1--infraestructura-base)
-   - [Capa 2 — Datos Geográficos y Contactos](#capa-2--datos-geográficos-y-contactos)
-   - [Capa 3 — Tipos de Cambio y Plan de Cuentas](#capa-3--tipos-de-cambio-y-plan-de-cuentas)
-   - [Capa 4 — Contabilidad Core](#capa-4--contabilidad-core)
-   - [Capa 5 — Facturación y Secuencias](#capa-5--facturación-y-secuencias)
-   - [Capa 6 — Retenciones e Impuestos Especiales](#capa-6--retenciones-e-impuestos-especiales)
-   - [Capa 7 — Inventario y Logística](#capa-7--inventario-y-logística)
-   - [Capa 8 — Ventas, Compras y POS](#capa-8--ventas-compras-y-pos)
-   - [Capa 9 — Máquinas Fiscales e IoT](#capa-9--máquinas-fiscales-e-iot)
-   - [Capa 10 — Módulos Opcionales / Extensiones](#capa-10--módulos-opcionales--extensiones)
+   - [Capa 0 — Infraestructura Base](#capa-0--infraestructura-base)
+   - [Capa 1 — Datos Geográficos y Contactos](#capa-1--datos-geográficos-y-contactos)
+   - [Capa 2 — Plan de Cuentas](#capa-2--plan-de-cuentas)
+   - [Capa 3 — Contabilidad Core](#capa-3--contabilidad-core)
+   - [Capa 4 — Facturación y Secuencias](#capa-4--facturación-y-secuencias)
+   - [Capa 5 — Retenciones e Impuestos Especiales](#capa-5--retenciones-e-impuestos-especiales)
+   - [Capa 6 — Inventario y Logística](#capa-6--inventario-y-logística)
+   - [Capa 7 — Ventas, Compras y POS](#capa-7--ventas-compras-y-pos)
+   - [Capa 8 — Máquinas Fiscales e IoT](#capa-8--máquinas-fiscales-e-iot)
+   - [Capa 9 — Módulos Opcionales / Extensiones](#capa-9--módulos-opcionales--extensiones)
 4. [Fichas Detalladas de Cada Módulo](#4-fichas-detalladas-de-cada-módulo)
 5. [Árbol de Dependencias](#5-árbol-de-dependencias)
 6. [Qué cubre y qué no cubre esta localización](#6-qué-cubre-y-qué-no-cubre-esta-localización)
@@ -134,17 +134,30 @@ Continuar desde inventario y agregar:
 
 ## 3. Módulos por Capa
 
-### Capa 1 — Infraestructura Base
+### Capa 0 — Infraestructura Base
+
+Estos dos módulos son pre-requisitos de prácticamente todo el stack. No tienen UI funcional propia — su rol es proveer extensiones técnicas y la lógica de tipos de cambio que el resto de capas consume. Deben instalarse primero, antes que cualquier otra app venezolana.
 
 #### `l10n_ve_base`
 Infraestructura técnica mínima. Extiende `ir.module.module` e `ir.ui.view` para que otros módulos de la localización puedan registrar vistas y configuraciones sin conflictos. Agrega configuraciones en `res.config.settings` comunes a toda la localización.
 
+**Dependencias:** `base`, `web`
+
+#### `l10n_ve_rate`
+Núcleo del manejo multimoneda venezolano. Extiende `res.currency.rate` para soportar múltiples tipos de tasa (BCV oficial, paralela, etc.). Extiende `res.company` y `res.currency` con lógica de conversión específica. Todo el stack de localización lo usa para calcular equivalencias en VES/USD.
+
+**Dependencias:** `base`, `l10n_ve_base`
+
+> `l10n_ve_rate` va aquí porque su única dependencia venezolana es `l10n_ve_base` y es requerido por `l10n_ve_contact`, `l10n_ve_accountant`, `l10n_ve_stock` y docenas de módulos más. Intentar instalar `l10n_ve_contact` sin él falla inmediatamente.
+
 ---
 
-### Capa 2 — Datos Geográficos y Contactos
+### Capa 1 — Datos Geográficos y Contactos
 
 #### `l10n_ve_location`
 Base de datos geográfica completa de Venezuela: ciudades, municipios (23 estados) y parroquias. Define los modelos `res.country.city`, `res.country.municipality` y `res.country.parish`, extiende `res.partner` para enlazarlos. Los datos vienen cargados como CSV/XML en el módulo.
+
+**Dependencias:** `base`, `contacts`
 
 #### `l10n_ve_contact`
 Extiende `res.partner` con campos venezolanos críticos:
@@ -154,15 +167,11 @@ Extiende `res.partner` con campos venezolanos críticos:
 - Enlace a municipio y parroquia del módulo `l10n_ve_location`
 - Extiende `res.company` y `res.config.settings` para información fiscal de la empresa
 
+**Dependencias:** `base`, `contacts`, `account`, `l10n_ve_rate`, `l10n_ve_location`
+
 ---
 
-### Capa 3 — Tipos de Cambio y Plan de Cuentas
-
-#### `l10n_ve_rate`
-Núcleo del manejo multimoneda venezolano. Extiende `res.currency.rate` para soportar múltiples tipos de tasa (BCV oficial, paralela, etc.). Extiende `res.company` y `res.currency` con lógica de conversión específica. Todo el stack de localización lo usa para calcular equivalencias en VES/USD.
-
-#### `l10n_ve_currency_rate_live`
-Opcional. Agrega un proveedor de tasa de cambio que consulta la API del BCV automáticamente, sincronizando la tasa oficial sin intervención manual. Depende de `currency_rate_live` (módulo OCA).
+### Capa 2 — Plan de Cuentas
 
 #### `l10n_binaural`
 Plan de cuentas completo para **empresas de servicio venezolanas**. Contiene:
@@ -172,12 +181,23 @@ Plan de cuentas completo para **empresas de servicio venezolanas**. Contiene:
 - `product.template` para productos de servicio
 - Datos de configuración inicial
 
+**Dependencias:** `base`, `account`, `account_accountant`, `stock`, `sale`, `contacts`
+
 #### `l10n_ve_binaural`
 Plan de cuentas alternativo. Define el modelo `template_ve.py` con la plantilla oficial de Odoo para Venezuela, más datos de demostración en `demo_company.xml`. Es más liviano que `l10n_binaural` y útil para empresas que parten de cero con Odoo.
 
+**Dependencias:** `account`
+
+> `l10n_binaural` y `l10n_ve_binaural` son mutuamente excluyentes — instalar solo uno.
+
+#### `l10n_ve_currency_rate_live` *(opcional en esta capa)*
+Agrega un proveedor de tasa de cambio que consulta la API del BCV automáticamente. Depende de `currency_rate_live` (módulo OCA).
+
+**Dependencias:** `l10n_ve_rate`, `currency_rate_live`
+
 ---
 
-### Capa 4 — Contabilidad Core
+### Capa 3 — Contabilidad Core
 
 #### `l10n_ve_accountant`
 El módulo más importante de la localización. Es el motor contable venezolano. Extiende prácticamente todos los modelos de `account`:
@@ -201,7 +221,7 @@ Incluye reportes:
 
 ---
 
-### Capa 5 — Facturación y Secuencias
+### Capa 4 — Facturación y Secuencias
 
 #### `od_journal_sequence`
 Módulo de terceros que habilita **numeración independiente por diario**. En Odoo estándar todos los asientos de un tipo comparten secuencia; este módulo crea una secuencia por diario. Requerido por `l10n_ve_invoice` para el control de correlativo. Extiende `account.journal` y `account.move`.
@@ -222,7 +242,7 @@ Reportes:
 
 ---
 
-### Capa 6 — Retenciones e Impuestos Especiales
+### Capa 5 — Retenciones e Impuestos Especiales
 
 #### `l10n_ve_tax_payer`
 Define la clasificación fiscal del `res.partner`:
@@ -270,7 +290,7 @@ Maneja el **IGTF** (Impuesto a las Grandes Transacciones Financieras, 3% sobre p
 
 ---
 
-### Capa 7 — Inventario y Logística
+### Capa 6 — Inventario y Logística
 
 #### `l10n_ve_stock`
 Inventario base venezolano. Extiende:
@@ -303,7 +323,7 @@ Glue module entre `purchase_stock` (Odoo) y el stack venezolano. Sin modelos pro
 
 ---
 
-### Capa 8 — Ventas, Compras y POS
+### Capa 7 — Ventas, Compras y POS
 
 #### `l10n_ve_filter_partner`
 Módulo técnico puro. Define `filter.partner.mixin` para reutilización: filtra `res.partner` mostrando solo clientes en contexto de ventas y solo proveedores en contexto de compras. Evita código duplicado en `l10n_ve_sale`, `l10n_ve_invoice`, etc.
@@ -337,7 +357,7 @@ Extensión del POS para IGTF. Sin modelos propios (toda la lógica está en asse
 
 ---
 
-### Capa 9 — Máquinas Fiscales e IoT
+### Capa 8 — Máquinas Fiscales e IoT
 
 #### `l10n_ve_iot_mf`
 Integración con máquinas fiscales **TFHKA (The Factory HKA)** a través del sistema IoT de Odoo:
@@ -365,7 +385,7 @@ Facturación digital con retenciones automáticas (integración TFHKA):
 
 ---
 
-### Capa 10 — Módulos Opcionales / Extensiones
+### Capa 9 — Módulos Opcionales / Extensiones
 
 #### `l10n_ve_fiscal_lock_days`
 Implementa bloqueo de períodos fiscales:
