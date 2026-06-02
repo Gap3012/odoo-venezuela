@@ -26,6 +26,7 @@
 \definecolor{melocoton}{HTML}{FDF3EC}
 \definecolor{naranjaclaro}{HTML}{FAD7B5}
 \definecolor{gristabla}{HTML}{F5F5F5}
+\definecolor{grislinea}{HTML}{CCCCCC}
 \definecolor{griscode}{HTML}{EEEEEE}
 \definecolor{blancotexto}{HTML}{FFFFFF}
 \definecolor{grisoscuro}{HTML}{444444}
@@ -69,13 +70,25 @@
 %  ESTILOS REUTILIZABLES
 % ============================================================
 
-% -- Checklist naranja --
+% -- Checklist interactivo (PDF form checkboxes) --
+\newcounter{cbcount}
 \newlist{checklist}{itemize}{1}
 \setlist[checklist]{
-  label={\textcolor{naranja}{$\square$}},
-  leftmargin=1.6em,
-  itemsep=2pt,
+  label={\stepcounter{cbcount}\CheckBox[name={cb\thecbcount},width=0.30cm,height=0.30cm,bordercolor=naranja,borderwidth=1]{}},
+  leftmargin=1.8em,
+  itemsep=3pt,
   parsep=0pt
+}
+
+% -- Helpers para form fields en tablas --
+% Campo de texto genérico
+\newcommand{\tfield}[2][4.0cm]{%
+  \TextField[name={#2},width=#1,height=0.44cm,bordercolor=grislinea,backgroundcolor=white,charsize=9pt]{}%
+}
+% Par Sí/No con checkboxes
+\newcommand{\sinocb}[1]{%
+  Sí~\CheckBox[name={#1\_si},width=0.28cm,height=0.28cm,bordercolor=naranja,borderwidth=1]{}%
+  \enspace No~\CheckBox[name={#1\_no},width=0.28cm,height=0.28cm,bordercolor=naranja,borderwidth=1]{}%
 }
 
 % -- tcolorbox: Perfil (borde naranja, fondo melocotón) --
@@ -247,6 +260,77 @@
 \end{titlepage}
 
 % ============================================================
+%  FICHA DEL CLIENTE (página 2 — rellenable)
+% ============================================================
+\begin{Form}
+\thispagestyle{portada}
+\vspace*{2cm}
+\begin{center}
+  {\color{naranja}\fontsize{22}{28}\bfseries\selectfont Ficha del Cliente}\\[4pt]
+  {\color{grisoscuro}\large Completar antes de iniciar la implementación}\\[6pt]
+  {\color{naranja}\rule{12cm}{1pt}}
+\end{center}
+\vspace{1cm}
+
+\begin{tcolorbox}[
+  colback=white, colframe=naranja, colbacktitle=naranja, coltitle=white,
+  fonttitle=\bfseries\sffamily\large, title={Identificación de la Empresa},
+  boxrule=1.2pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=10pt
+]
+\setlength{\tabcolsep}{4pt}%
+\begin{tabular}{@{}p{0.455\textwidth}@{\hspace{14pt}}p{0.455\textwidth}@{}}
+  {\small\color{naranja}\bfseries Razón Social} &
+  {\small\color{naranja}\bfseries RIF} \\[2pt]
+  \TextField[name=cli\_razon,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} &
+  \TextField[name=cli\_rif,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} \\[10pt]
+  {\small\color{naranja}\bfseries Dirección fiscal} &
+  {\small\color{naranja}\bfseries Ciudad / Estado} \\[2pt]
+  \TextField[name=cli\_dir,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} &
+  \TextField[name=cli\_ciudad,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} \\[10pt]
+  {\small\color{naranja}\bfseries Teléfono} &
+  {\small\color{naranja}\bfseries Sitio web} \\[2pt]
+  \TextField[name=cli\_tel,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} &
+  \TextField[name=cli\_web,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} \\
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{0.6cm}
+
+\begin{tcolorbox}[
+  colback=white, colframe=naranja, colbacktitle=naranja, coltitle=white,
+  fonttitle=\bfseries\sffamily\large, title={Contacto e Implementación},
+  boxrule=1.2pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=10pt
+]
+\setlength{\tabcolsep}{4pt}%
+\begin{tabular}{@{}p{0.455\textwidth}@{\hspace{14pt}}p{0.455\textwidth}@{}}
+  {\small\color{naranja}\bfseries Contacto principal} &
+  {\small\color{naranja}\bfseries Email} \\[2pt]
+  \TextField[name=cli\_contacto,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} &
+  \TextField[name=cli\_email,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} \\[10pt]
+  {\small\color{naranja}\bfseries Consultor responsable} &
+  {\small\color{naranja}\bfseries Fecha estimada de inicio} \\[2pt]
+  \TextField[name=cli\_consultor,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} &
+  \TextField[name=cli\_fecha,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt]{} \\[10pt]
+  {\small\color{naranja}\bfseries Perfil asignado (ver §1.6)} &
+  {\small\color{naranja}\bfseries Versión Odoo} \\[2pt]
+  \ChoiceMenu[combo,name=perfil\_asig,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt,default={}]{}{,Perfil A,Perfil B,Perfil C,Perfil D,Perfil E} &
+  \ChoiceMenu[combo,name=ver\_odoo,width=\linewidth,height=0.60cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=11pt,default={}]{}{,19 Community,19 Enterprise} \\
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{0.6cm}
+
+\begin{tcolorbox}[
+  colback=white, colframe=naranja, colbacktitle=naranja, coltitle=white,
+  fonttitle=\bfseries\sffamily\large, title={Observaciones},
+  boxrule=1.2pt, arc=4pt, left=10pt, right=10pt, top=8pt, bottom=10pt
+]
+\TextField[name=observaciones,width=\linewidth,height=2.2cm,bordercolor=grislinea,backgroundcolor=gristabla,charsize=10pt,multiline=true]{}
+\end{tcolorbox}
+
+\clearpage
+
+% ============================================================
 %  TABLA DE CONTENIDO
 % ============================================================
 \setcounter{page}{1}
@@ -271,27 +355,29 @@ Esta sección contiene los formularios de recolección de información que deben
   \tchead{Dato} & \tchead{Valor} & \tchead{Impacto} \\
   \endhead
   \rowcolor{gristabla}
-  RIF completo & & \modulo{l10n\_ve\_contact} \\
+  RIF completo & \tfield[4.3cm]{rif} & \modulo{l10n\_ve\_contact} \\
   \rowcolor{white}
-  Razón social exacta & & Portada factura, ARCV \\
+  Razón social exacta & \tfield[4.3cm]{razon} & Portada factura, ARCV \\
   \rowcolor{gristabla}
-  Dirección fiscal & & Factura SENIAT Art.57 \\
+  Dirección fiscal & \tfield[4.3cm]{direccion} & Factura SENIAT Art.57 \\
   \rowcolor{white}
-  Teléfono y email & & Datos emisor factura \\
+  Teléfono y email & \tfield[4.3cm]{telefono} & Datos emisor factura \\
   \rowcolor{gristabla}
-  Tipo de contribuyente & Ordinario / Especial / Exento & Retenciones IVA, ISLR \\
+  Tipo de contribuyente &
+  \ChoiceMenu[combo,name=tipo\_contrib,width=4.0cm,height=0.44cm,bordercolor=grislinea,backgroundcolor=white,charsize=9pt,default={}]{}{,Ordinario,Especial,Exento} &
+  Retenciones IVA, ISLR \\
   \rowcolor{white}
-  ¿Es agente de retención de IVA? & Sí / No & \modulo{l10n\_ve\_payment\_extension} \\
+  ¿Es agente de retención de IVA? & \sinocb{ret\_iva} & \modulo{l10n\_ve\_payment\_extension} \\
   \rowcolor{gristabla}
-  ¿Es agente de retención de ISLR? & Sí / No & \modulo{l10n\_ve\_payment\_extension} \\
+  ¿Es agente de retención de ISLR? & \sinocb{ret\_islr} & \modulo{l10n\_ve\_payment\_extension} \\
   \rowcolor{white}
-  ¿Retiene impuesto municipal? & Sí / No & \modulo{l10n\_ve\_payment\_extension} \\
+  ¿Retiene impuesto municipal? & \sinocb{ret\_mun} & \modulo{l10n\_ve\_payment\_extension} \\
   \rowcolor{gristabla}
-  Resolución de contribuyente especial & & Comprobante ARCV \\
+  Resolución de contribuyente especial & \tfield[4.3cm]{resolucion} & Comprobante ARCV \\
   \rowcolor{white}
-  Actividad económica principal & & Retención municipal \\
+  Actividad económica principal & \tfield[4.3cm]{act\_eco} & Retención municipal \\
   \rowcolor{gristabla}
-  Valor actual de la UT & & \modulo{l10n\_ve\_accountant} \\
+  Valor actual de la UT & \tfield[4.3cm]{valor\_ut} & \modulo{l10n\_ve\_accountant} \\
 \end{longtable}
 
 % ---------- 1.2 Operaciones en Moneda Extranjera ----------
@@ -305,15 +391,15 @@ Esta sección contiene los formularios de recolección de información que deben
   \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Impacto} \\
   \endhead
   \rowcolor{gristabla}
-  ¿Factura en USD u otra divisa? & & \modulo{l10n\_ve\_rate}, \modulo{l10n\_ve\_invoice} \\
+  ¿Factura en USD u otra divisa? & \sinocb{usd\_factura} & \modulo{l10n\_ve\_rate}, \modulo{l10n\_ve\_invoice} \\
   \rowcolor{white}
-  ¿Recibe pagos en divisas? & & \modulo{l10n\_ve\_igtf} \\
+  ¿Recibe pagos en divisas? & \sinocb{pagos\_div} & \modulo{l10n\_ve\_igtf} \\
   \rowcolor{gristabla}
-  ¿Realiza anticipos en divisas? & & \modulo{l10n\_ve\_igtf} \\
+  ¿Realiza anticipos en divisas? & \sinocb{anticipos} & \modulo{l10n\_ve\_igtf} \\
   \rowcolor{white}
-  ¿Necesita sincronización automática BCV? & & \modulo{l10n\_ve\_currency\_rate\_live} \\
+  ¿Necesita sincronización automática BCV? & \sinocb{bcv\_auto} & \modulo{l10n\_ve\_currency\_rate\_live} \\
   \rowcolor{gristabla}
-  Tasa de cambio vigente al inicio & & Configuración inicial día 1 \\
+  Tasa de cambio vigente al inicio & \tfield[2.3cm]{tasa\_ini} & Configuración inicial día 1 \\
 \end{longtable}
 
 % ---------- 1.3 Emisión de Facturas ----------
@@ -327,15 +413,17 @@ Esta sección contiene los formularios de recolección de información que deben
   \tchead{Pregunta} & \tchead{Opciones} & \tchead{Módulo resultante} \\
   \endhead
   \rowcolor{gristabla}
-  ¿Cómo emite facturas actualmente? & Formato libre / Máquina fiscal / Factura digital & Determina perfil E o no \\
+  ¿Cómo emite facturas actualmente? &
+  \ChoiceMenu[combo,name=tipo\_fact,width=3.7cm,height=0.44cm,bordercolor=grislinea,backgroundcolor=white,charsize=9pt,default={}]{}{,Formato libre,Máquina fiscal,Factura digital} &
+  Determina perfil E o no \\
   \rowcolor{white}
-  ¿Tiene máquina fiscal TFHKA? & Sí / No & \modulo{l10n\_ve\_iot\_mf} \\
+  ¿Tiene máquina fiscal TFHKA? & \sinocb{mf\_tfhka} & \modulo{l10n\_ve\_iot\_mf} \\
   \rowcolor{gristabla}
-  ¿Necesita facturación digital con retenciones automáticas? & Sí / No & \modulo{l10n\_ve\_invoice\_digital} \\
+  ¿Necesita facturación digital con retenciones automáticas? & \sinocb{fact\_dig} & \modulo{l10n\_ve\_invoice\_digital} \\
   \rowcolor{white}
-  Prefijo del número de control & ej. 00 & \modulo{od\_journal\_sequence} \\
+  Prefijo del número de control & \tfield[3.7cm]{prefijo\_ctrl} & \modulo{od\_journal\_sequence} \\
   \rowcolor{gristabla}
-  ¿Maneja notas de débito? & Sí / No & \modulo{l10n\_ve\_invoice} \\
+  ¿Maneja notas de débito? & \sinocb{notas\_deb} & \modulo{l10n\_ve\_invoice} \\
 \end{longtable}
 
 % ---------- 1.4 Operaciones Comerciales ----------
@@ -349,19 +437,19 @@ Esta sección contiene los formularios de recolección de información que deben
   \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Módulos adicionales} \\
   \endhead
   \rowcolor{gristabla}
-  ¿Maneja inventario físico? & & \modulo{l10n\_ve\_stock}, \modulo{l10n\_ve\_stock\_account} \\
+  ¿Maneja inventario físico? & \sinocb{inventario} & \modulo{l10n\_ve\_stock}, \modulo{l10n\_ve\_stock\_account} \\
   \rowcolor{white}
-  ¿Emite guías de despacho? & & \modulo{l10n\_ve\_stock\_account} \\
+  ¿Emite guías de despacho? & \sinocb{guias} & \modulo{l10n\_ve\_stock\_account} \\
   \rowcolor{gristabla}
-  ¿Tiene punto de venta (caja)? & & \modulo{l10n\_ve\_pos} \\
+  ¿Tiene punto de venta (caja)? & \sinocb{pos} & \modulo{l10n\_ve\_pos} \\
   \rowcolor{white}
-  ¿El POS usa máquina fiscal? & & \modulo{l10n\_ve\_pos\_mf} \\
+  ¿El POS usa máquina fiscal? & \sinocb{pos\_mf} & \modulo{l10n\_ve\_pos\_mf} \\
   \rowcolor{gristabla}
-  ¿Realiza donaciones registrables? & & \modulo{l10n\_ve\_donation} \\
+  ¿Realiza donaciones registrables? & \sinocb{donaciones} & \modulo{l10n\_ve\_donation} \\
   \rowcolor{white}
-  ¿Necesita programa de fidelización? & & \modulo{l10n\_ve\_invoice\_loyalty} \\
+  ¿Necesita programa de fidelización? & \sinocb{fidelizacion} & \modulo{l10n\_ve\_invoice\_loyalty} \\
   \rowcolor{gristabla}
-  ¿Maneja listas de precio en divisas? & & \modulo{l10n\_ve\_price\_list} \\
+  ¿Maneja listas de precio en divisas? & \sinocb{price\_list} & \modulo{l10n\_ve\_price\_list} \\
 \end{longtable}
 
 % ---------- 1.5 Requerimientos Adicionales ----------
@@ -375,15 +463,15 @@ Esta sección contiene los formularios de recolección de información que deben
   \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Módulo} \\
   \endhead
   \rowcolor{gristabla}
-  ¿Requiere bloqueo de períodos fiscales? & & \modulo{l10n\_ve\_fiscal\_lock\_days} \\
+  ¿Requiere bloqueo de períodos fiscales? & \sinocb{lock\_days} & \modulo{l10n\_ve\_fiscal\_lock\_days} \\
   \rowcolor{white}
-  ¿Requiere auditoría de cambios contables? & & \modulo{l10n\_ve\_auditlog} \\
+  ¿Requiere auditoría de cambios contables? & \sinocb{auditlog} & \modulo{l10n\_ve\_auditlog} \\
   \rowcolor{gristabla}
-  ¿Necesita cierre formal de año fiscal? & & \modulo{l10n\_ve\_account\_fiscalyear\_closing} \\
+  ¿Necesita cierre formal de año fiscal? & \sinocb{cierre\_fiscal} & \modulo{l10n\_ve\_account\_fiscalyear\_closing} \\
   \rowcolor{white}
-  ¿Valida referencias bancarias en pagos? & & \modulo{l10n\_ve\_ref\_bank} \\
+  ¿Valida referencias bancarias en pagos? & \sinocb{ref\_bank} & \modulo{l10n\_ve\_ref\_bank} \\
   \rowcolor{gristabla}
-  ¿Usa Odoo Studio? & & \modulo{l10n\_ve\_studio} \\
+  ¿Usa Odoo Studio? & \sinocb{studio} & \modulo{l10n\_ve\_studio} \\
 \end{longtable}
 
 % ============================================================
@@ -1425,4 +1513,5 @@ base / web / account / account_accountant
 % ============================================================
 %  FIN DEL DOCUMENTO
 % ============================================================
+\end{Form}
 \end{document}
