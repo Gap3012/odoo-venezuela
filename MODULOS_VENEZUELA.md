@@ -2,7 +2,7 @@
 
 **Repositorio:** odoo-venezuela (rama 19.0)  
 **Fecha de análisis:** 2026-06-01  
-**Total de módulos:** 35
+**Total de módulos:** 33
 
 ---
 
@@ -13,14 +13,13 @@
 3. [Módulos por Capa](#3-módulos-por-capa)
    - [Capa 0 — Infraestructura Base](#capa-0--infraestructura-base)
    - [Capa 1 — Datos Geográficos y Contactos](#capa-1--datos-geográficos-y-contactos)
-   - [Capa 2 — Plan de Cuentas](#capa-2--plan-de-cuentas)
-   - [Capa 3 — Contabilidad Core](#capa-3--contabilidad-core)
-   - [Capa 4 — Facturación y Secuencias](#capa-4--facturación-y-secuencias)
-   - [Capa 5 — Retenciones e Impuestos Especiales](#capa-5--retenciones-e-impuestos-especiales)
-   - [Capa 6 — Inventario y Logística](#capa-6--inventario-y-logística)
-   - [Capa 7 — Ventas, Compras y POS](#capa-7--ventas-compras-y-pos)
-   - [Capa 8 — Máquinas Fiscales e IoT](#capa-8--máquinas-fiscales-e-iot)
-   - [Capa 9 — Módulos Opcionales / Extensiones](#capa-9--módulos-opcionales--extensiones)
+   - [Capa 2 — Contabilidad Core](#capa-2--contabilidad-core)
+   - [Capa 3 — Facturación y Secuencias](#capa-3--facturación-y-secuencias)
+   - [Capa 4 — Retenciones e Impuestos Especiales](#capa-4--retenciones-e-impuestos-especiales)
+   - [Capa 5 — Inventario y Logística](#capa-5--inventario-y-logística)
+   - [Capa 6 — Ventas, Compras y POS](#capa-6--ventas-compras-y-pos)
+   - [Capa 7 — Máquinas Fiscales e IoT](#capa-7--máquinas-fiscales-e-iot)
+   - [Capa 8 — Módulos Opcionales / Extensiones](#capa-8--módulos-opcionales--extensiones)
 4. [Fichas Detalladas de Cada Módulo](#4-fichas-detalladas-de-cada-módulo)
 5. [Árbol de Dependencias](#5-árbol-de-dependencias)
 6. [Qué cubre y qué no cubre esta localización](#6-qué-cubre-y-qué-no-cubre-esta-localización)
@@ -46,9 +45,7 @@ Los módulos con prefijo `l10n_ve_*` son desarrollados por **Binaural Dev**, mie
     ↓
 [l10n_ve_location] + [l10n_ve_contact]  ←  geografía + RIF
     ↓
-[l10n_binaural / l10n_ve_binaural]  ←  plan de cuentas
-    ↓
-[l10n_ve_accountant]  ←  contabilidad core
+[l10n_ve_accountant]  ←  contabilidad core  (plan de cuentas: oficial Odoo 19)
     ↓
 [l10n_ve_invoice]  ←  facturación SENIAT
     ↓
@@ -77,13 +74,12 @@ El orden está determinado por el grafo de dependencias de los `__manifest__.py`
 | 2 | `l10n_ve_rate` | Tipos de cambio (requerido por casi todo) |
 | 3 | `l10n_ve_location` | Datos geográficos de Venezuela |
 | 4 | `l10n_ve_contact` | RIF, tipos de contribuyente, municipio |
-| 5 | `l10n_binaural` | Plan de cuentas para empresas de servicio |
-| 6 | `od_journal_sequence` | Numeración por diario (requerido por facturación) |
-| 7 | `l10n_ve_accountant` | Motor contable venezolano + Unidad Tributaria |
-| 8 | `l10n_ve_invoice` | Facturación, número de control, SENIAT |
-| 9 | `l10n_ve_tax_payer` | Clasificación de contribuyentes |
-| 10 | `l10n_ve_payment_extension` | Retenciones IVA / ISLR / Municipal |
-| 11 | `l10n_ve_igtf` | IGTF (3% grandes transacciones financieras) |
+| 5 | `od_journal_sequence` | Numeración por diario (requerido por facturación) |
+| 6 | `l10n_ve_accountant` | Motor contable venezolano + Unidad Tributaria |
+| 7 | `l10n_ve_invoice` | Facturación, número de control, SENIAT |
+| 8 | `l10n_ve_tax_payer` | Clasificación de contribuyentes |
+| 9 | `l10n_ve_payment_extension` | Retenciones IVA / ISLR / Municipal |
+| 10 | `l10n_ve_igtf` | IGTF (3% grandes transacciones financieras) |
 
 ### Instalación con inventario
 
@@ -126,9 +122,8 @@ Continuar desde inventario y agregar:
 | `l10n_ve_currency_rate_live` | Si se quiere sincronización automática BCV |
 | `l10n_ve_invoice_loyalty` | Si se tiene programa de fidelización |
 | `l10n_ve_studio` | Si se usa Odoo Studio (limita customizaciones) |
-| `l10n_ve_binaural` | Alternativa al plan de cuentas `l10n_binaural` |
 
-> **Nota:** `l10n_binaural` y `l10n_ve_binaural` son mutuamente excluyentes — ambos proveen plan de cuentas. `l10n_binaural` es el plan completo para empresas de servicios; `l10n_ve_binaural` es el oficial de Odoo adaptado.
+> **Nota sobre plan de cuentas:** En Odoo 19, el plan de cuentas oficial para Venezuela viene incluido en el core de Odoo (`l10n_ve` oficial). No se requiere instalar ningún módulo adicional de plan de cuentas — se selecciona durante la configuración inicial de la empresa.
 
 ---
 
@@ -169,35 +164,14 @@ Extiende `res.partner` con campos venezolanos críticos:
 
 **Dependencias:** `base`, `contacts`, `account`, `l10n_ve_rate`, `l10n_ve_location`
 
----
-
-### Capa 2 — Plan de Cuentas
-
-#### `l10n_binaural`
-Plan de cuentas completo para **empresas de servicio venezolanas**. Contiene:
-- Árbol de cuentas contables (activos, pasivos, patrimonio, ingresos, gastos)
-- Diarios contables preconfigurados
-- Impuestos IVA (16%, exento, cero) y retenciones básicas
-- `product.template` para productos de servicio
-- Datos de configuración inicial
-
-**Dependencias:** `base`, `account`, `account_accountant`, `stock`, `sale`, `contacts`
-
-#### `l10n_ve_binaural`
-Plan de cuentas alternativo. Define el modelo `template_ve.py` con la plantilla oficial de Odoo para Venezuela, más datos de demostración en `demo_company.xml`. Es más liviano que `l10n_binaural` y útil para empresas que parten de cero con Odoo.
-
-**Dependencias:** `account`
-
-> `l10n_binaural` y `l10n_ve_binaural` son mutuamente excluyentes — instalar solo uno.
-
-#### `l10n_ve_currency_rate_live` *(opcional en esta capa)*
+#### `l10n_ve_currency_rate_live` *(opcional)*
 Agrega un proveedor de tasa de cambio que consulta la API del BCV automáticamente. Depende de `currency_rate_live` (módulo OCA).
 
 **Dependencias:** `l10n_ve_rate`, `currency_rate_live`
 
 ---
 
-### Capa 3 — Contabilidad Core
+### Capa 2 — Contabilidad Core
 
 #### `l10n_ve_accountant`
 El módulo más importante de la localización. Es el motor contable venezolano. Extiende prácticamente todos los modelos de `account`:
@@ -221,7 +195,7 @@ Incluye reportes:
 
 ---
 
-### Capa 4 — Facturación y Secuencias
+### Capa 3 — Facturación y Secuencias
 
 #### `od_journal_sequence`
 Módulo de terceros que habilita **numeración independiente por diario**. En Odoo estándar todos los asientos de un tipo comparten secuencia; este módulo crea una secuencia por diario. Requerido por `l10n_ve_invoice` para el control de correlativo. Extiende `account.journal` y `account.move`.
@@ -242,7 +216,7 @@ Reportes:
 
 ---
 
-### Capa 5 — Retenciones e Impuestos Especiales
+### Capa 4 — Retenciones e Impuestos Especiales
 
 #### `l10n_ve_tax_payer`
 Define la clasificación fiscal del `res.partner`:
@@ -290,7 +264,7 @@ Maneja el **IGTF** (Impuesto a las Grandes Transacciones Financieras, 3% sobre p
 
 ---
 
-### Capa 6 — Inventario y Logística
+### Capa 5 — Inventario y Logística
 
 #### `l10n_ve_stock`
 Inventario base venezolano. Extiende:
@@ -323,7 +297,7 @@ Glue module entre `purchase_stock` (Odoo) y el stack venezolano. Sin modelos pro
 
 ---
 
-### Capa 7 — Ventas, Compras y POS
+### Capa 6 — Ventas, Compras y POS
 
 #### `l10n_ve_filter_partner`
 Módulo técnico puro. Define `filter.partner.mixin` para reutilización: filtra `res.partner` mostrando solo clientes en contexto de ventas y solo proveedores en contexto de compras. Evita código duplicado en `l10n_ve_sale`, `l10n_ve_invoice`, etc.
@@ -357,7 +331,7 @@ Extensión del POS para IGTF. Sin modelos propios (toda la lógica está en asse
 
 ---
 
-### Capa 8 — Máquinas Fiscales e IoT
+### Capa 7 — Máquinas Fiscales e IoT
 
 #### `l10n_ve_iot_mf`
 Integración con máquinas fiscales **TFHKA (The Factory HKA)** a través del sistema IoT de Odoo:
@@ -385,7 +359,7 @@ Facturación digital con retenciones automáticas (integración TFHKA):
 
 ---
 
-### Capa 9 — Módulos Opcionales / Extensiones
+### Capa 8 — Módulos Opcionales / Extensiones
 
 #### `l10n_ve_fiscal_lock_days`
 Implementa bloqueo de períodos fiscales:
@@ -453,8 +427,6 @@ Control de Odoo Studio para la localización:
 | `l10n_ve_rate` | Tipos de cambio venezolanos (BCV oficial, paralela). Conversiones VES/USD. | `base`, `l10n_ve_base` |
 | `l10n_ve_location` | Ciudades, municipios y parroquias de Venezuela (23 estados). | `base`, `contacts` |
 | `l10n_ve_contact` | Validación RIF, prefijos (V/E/J/G), tipo contribuyente, domicilio fiscal. | `base`, `contacts`, `account`, `l10n_ve_rate`, `l10n_ve_location` |
-| `l10n_binaural` | Plan de cuentas completo para empresas de servicio + impuestos + diarios. | `base`, `account`, `account_accountant`, `stock`, `sale`, `contacts` |
-| `l10n_ve_binaural` | Plan de cuentas alternativo (template oficial Odoo Venezuela). | `account` |
 | `od_journal_sequence` | Secuencias numéricas independientes por diario contable. | `account` |
 | `l10n_ve_accountant` | Motor contable venezolano: UT, multimoneda, pagos, reportes. | `base`, `web`, `account`, `account_reports`, `purchase`, `sale`, `l10n_ve_base`, `l10n_ve_rate`, `l10n_ve_contact`, `account_invoice_pricelist`, `account_invoice_pricelist_sale` |
 | `l10n_ve_invoice` | Número de control, correlativo, referencia aduanal, factura libre SENIAT. | `l10n_ve_rate`, `l10n_ve_base`, `l10n_ve_accountant`, `l10n_ve_contact`, `od_journal_sequence`, `account_debit_note` |
@@ -518,9 +490,6 @@ base / web / account / account_accountant
 │   │   └── l10n_ve_currency_rate_live
 │   └── l10n_ve_studio
 │
-├── l10n_binaural             ◄─ plan de cuentas (servicio)
-├── l10n_ve_binaural          ◄─ plan de cuentas (template Odoo)
-│
 ├── l10n_ve_filter_partner    ◄─ mixin técnico
 │
 ├── l10n_ve_pos               ◄─ POS
@@ -544,7 +513,7 @@ base / web / account / account_accountant
 
 | Área | Módulos |
 |------|---------|
-| Plan de cuentas venezolano | `l10n_binaural`, `l10n_ve_binaural` |
+| Plan de cuentas venezolano | Oficial Odoo 19 (`l10n_ve` core) |
 | Validación de RIF | `l10n_ve_contact` |
 | Geografía (estados/municipios/parroquias) | `l10n_ve_location` |
 | Tipos de cambio BCV | `l10n_ve_rate`, `l10n_ve_currency_rate_live` |
@@ -628,13 +597,14 @@ Las pruebas están ordenadas igual que el orden de instalación. Cada sección a
 
 ---
 
-### `l10n_binaural`
+### Plan de cuentas oficial Odoo 19 (`l10n_ve` core)
 
-- [ ] Ir a **Contabilidad → Configuración → Plan de Cuentas** — debe mostrar el plan de cuentas venezolano completo (activos, pasivos, patrimonio, ingresos, gastos)
-- [ ] Verificar que existen cuentas de IVA (ej. IVA por pagar, IVA soportado)
+> Se configura durante el asistente de creación de empresa, no es un módulo separado.
+
+- [ ] Al crear/configurar la empresa, seleccionar **Venezuela** como país
+- [ ] Verificar que el plan de cuentas venezolano se aplica automáticamente (activos, pasivos, patrimonio, ingresos, gastos)
 - [ ] Ir a **Contabilidad → Configuración → Impuestos** — deben existir: IVA 16%, IVA 8%, Exento, Cero
 - [ ] Ir a **Contabilidad → Configuración → Diarios** — deben existir al menos: Ventas, Compras, Banco, Caja
-- [ ] Verificar que la empresa tiene asignado el plan de cuentas en **Ajustes → Empresa**
 
 ---
 
