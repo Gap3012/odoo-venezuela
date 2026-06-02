@@ -66,6 +66,12 @@
 \usepackage{setspace}
 \usepackage{parskip}
 
+% Ampliar espacio para números de sección en el TOC (evita solapamiento en 11.10+)
+\makeatletter
+\renewcommand{\l@section}{\@dottedtocline{1}{0em}{2.0em}}
+\renewcommand{\l@subsection}{\@dottedtocline{2}{2.0em}{3.2em}}
+\makeatother
+
 % ============================================================
 %  ESTILOS REUTILIZABLES
 % ============================================================
