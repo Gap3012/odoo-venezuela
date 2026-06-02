@@ -83,7 +83,9 @@
   perfilbox/.style={
     colback=melocoton,
     colframe=naranja,
-    fonttitle=\bfseries\color{naranja},
+    colbacktitle=naranja,
+    coltitle=white,
+    fonttitle=\bfseries\sffamily,
     boxrule=1.2pt,
     arc=4pt,
     left=6pt, right=6pt, top=4pt, bottom=4pt,
@@ -148,10 +150,7 @@
 % ============================================================
 %  MACROS AUXILIARES PARA TABLAS
 % ============================================================
-\newcommand{\thead}[1]{%
-  \cellcolor{naranja}\textcolor{white}{\textbf{#1}}%
-}
-\newcommand{\theadw}[1]{%
+\newcommand{\tchead}[1]{%
   \cellcolor{naranja}\textcolor{white}{\textbf{#1}}%
 }
 
@@ -266,10 +265,10 @@ Esta sección contiene los formularios de recolección de información que deben
 
 \begin{longtable}{L{5.0cm} L{4.5cm} L{5.0cm}}
   \rowcolor{naranja}
-  \thead{Dato} & \thead{Valor} & \thead{Impacto} \\
+  \tchead{Dato} & \tchead{Valor} & \tchead{Impacto} \\
   \endfirsthead
   \rowcolor{naranja}
-  \thead{Dato} & \thead{Valor} & \thead{Impacto} \\
+  \tchead{Dato} & \tchead{Valor} & \tchead{Impacto} \\
   \endhead
   \rowcolor{gristabla}
   RIF completo & & \modulo{l10n\_ve\_contact} \\
@@ -300,10 +299,10 @@ Esta sección contiene los formularios de recolección de información que deben
 
 \begin{longtable}{L{5.5cm} L{2.5cm} L{6.5cm}}
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Sí / No} & \thead{Impacto} \\
+  \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Impacto} \\
   \endfirsthead
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Sí / No} & \thead{Impacto} \\
+  \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Impacto} \\
   \endhead
   \rowcolor{gristabla}
   ¿Factura en USD u otra divisa? & & \modulo{l10n\_ve\_rate}, \modulo{l10n\_ve\_invoice} \\
@@ -322,10 +321,10 @@ Esta sección contiene los formularios de recolección de información que deben
 
 \begin{longtable}{L{5.0cm} L{4.0cm} L{5.5cm}}
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Opciones} & \thead{Módulo resultante} \\
+  \tchead{Pregunta} & \tchead{Opciones} & \tchead{Módulo resultante} \\
   \endfirsthead
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Opciones} & \thead{Módulo resultante} \\
+  \tchead{Pregunta} & \tchead{Opciones} & \tchead{Módulo resultante} \\
   \endhead
   \rowcolor{gristabla}
   ¿Cómo emite facturas actualmente? & Formato libre / Máquina fiscal / Factura digital & Determina perfil E o no \\
@@ -344,10 +343,10 @@ Esta sección contiene los formularios de recolección de información que deben
 
 \begin{longtable}{L{5.0cm} L{2.5cm} L{7.0cm}}
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulos adicionales} \\
+  \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Módulos adicionales} \\
   \endfirsthead
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulos adicionales} \\
+  \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Módulos adicionales} \\
   \endhead
   \rowcolor{gristabla}
   ¿Maneja inventario físico? & & \modulo{l10n\_ve\_stock}, \modulo{l10n\_ve\_stock\_account} \\
@@ -370,10 +369,10 @@ Esta sección contiene los formularios de recolección de información que deben
 
 \begin{longtable}{L{5.5cm} L{2.5cm} L{6.5cm}}
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulo} \\
+  \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Módulo} \\
   \endfirsthead
   \rowcolor{naranja}
-  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulo} \\
+  \tchead{Pregunta} & \tchead{Sí / No} & \tchead{Módulo} \\
   \endhead
   \rowcolor{gristabla}
   ¿Requiere bloqueo de períodos fiscales? & & \modulo{l10n\_ve\_fiscal\_lock\_days} \\
@@ -475,7 +474,7 @@ Las siguientes aplicaciones nativas de Odoo 19 deben instalarse antes de procede
 \begin{center}
 \begin{tabular}{L{3.8cm} L{4.2cm} L{6.0cm}}
   \rowcolor{naranja}
-  \thead{App} & \thead{Módulo técnico} & \thead{Obligatoria para} \\
+  \tchead{App} & \tchead{Módulo técnico} & \tchead{Obligatoria para} \\
   \rowcolor{gristabla}
   Contabilidad & \modulo{account + account\_accountant} & Todos los perfiles \\
   \rowcolor{white}
@@ -577,7 +576,7 @@ Las siguientes aplicaciones nativas de Odoo 19 deben instalarse antes de procede
 \begin{center}
 \begin{tabular}{L{6.5cm} L{7.5cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Cuándo agregar} \\
+  \tchead{Módulo} & \tchead{Cuándo agregar} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_currency\_rate\_live} & Si requieren sincronización automática BCV \\
   \rowcolor{white}
@@ -828,7 +827,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_base} & Infraestructura técnica. Extiende \texttt{ir.module.module} e \texttt{ir.ui.view}. Deps: \texttt{base, web} \\
   \rowcolor{white}
@@ -843,7 +842,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_location} & Ciudades, municipios (335) y parroquias de Venezuela. Modelos: \texttt{res.country.city}, \texttt{res.country.municipality}, \texttt{res.country.parish}. Deps: \texttt{base, contacts} \\
   \rowcolor{white}
@@ -856,7 +855,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_accountant} & Motor contable venezolano. Campos \texttt{invoice\_date\_display}, \texttt{company\_currency\_rate}. Modelo \texttt{tax\_unit} (UT). Pagos multimoneda. Deps: \texttt{base, web, account, account\_reports, purchase, sale, l10n\_ve\_base, l10n\_ve\_rate, l10n\_ve\_contact} \\
 \end{tabular}
@@ -867,7 +866,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{od\_journal\_sequence} & Numeración independiente por diario. Requerido para número de control. Deps: \texttt{account} \\
   \rowcolor{white}
@@ -880,7 +879,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_tax\_payer} & Flags por partner: Retiene IVA/ISLR/Municipal. Deps: \texttt{base, l10n\_ve\_rate, l10n\_ve\_accountant} \\
   \rowcolor{white}
@@ -895,7 +894,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_filter\_partner} & Mixin técnico para filtro clientes/proveedores. Deps: \texttt{web} \\
   \rowcolor{white}
@@ -914,7 +913,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_sale} & Ventas con tipos de cambio y precios en divisas. Deps: \texttt{base, l10n\_ve\_base, sale, l10n\_ve\_rate, l10n\_ve\_contact, l10n\_ve\_invoice, l10n\_ve\_filter\_partner, l10n\_ve\_stock} \\
   \rowcolor{white}
@@ -933,7 +932,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{3.8cm} L{10.2cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_iot\_mf} & Integración TFHKA (The Factory HKA). \texttt{iot.device} para máquina fiscal. Reporte Z. Deps: \texttt{iot, account, web, l10n\_ve\_invoice, l10n\_ve\_tax\_payer, l10n\_ve\_stock\_account} \\
   \rowcolor{white}
@@ -948,7 +947,7 @@ El SENIAT no tiene un proceso formal de homologación de software para todos los
 \begin{center}
 \begin{tabular}{L{4.2cm} L{9.8cm}}
   \rowcolor{naranja}
-  \thead{Módulo} & \thead{Descripción} \\
+  \tchead{Módulo} & \tchead{Descripción} \\
   \rowcolor{gristabla}
   \modulo{l10n\_ve\_fiscal\_lock\_days} & Bloqueo de períodos fiscales por fecha. Deps: \texttt{base, account\_accountant, l10n\_ve\_accountant} \\
   \rowcolor{white}
@@ -1041,7 +1040,7 @@ base / web / account / account_accountant
 \begin{center}
 \begin{tabular}{L{6.0cm} L{8.0cm}}
   \rowcolor{naranja}
-  \thead{Área} & \thead{Módulo(s)} \\
+  \tchead{Área} & \tchead{Módulo(s)} \\
   \rowcolor{gristabla}
   Plan de cuentas venezolano & Oficial Odoo 19 (\texttt{l10n\_ve} core) \\
   \rowcolor{white}
@@ -1094,7 +1093,7 @@ base / web / account / account_accountant
 \begin{center}
 \begin{tabular}{L{5.5cm} L{8.5cm}}
   \rowcolor{naranja}
-  \thead{Área} & \thead{Detalle} \\
+  \tchead{Área} & \tchead{Detalle} \\
   \rowcolor{gristabla}
   Declaración mensual de IVA (Forma 30) & No hay exportación automática al formato SENIAT \\
   \rowcolor{white}
