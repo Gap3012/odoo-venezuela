@@ -1,0 +1,1400 @@
+% ============================================================
+%  Guía de Implementación — Odoo 19 Venezuela
+%  Compilar con: pdflatex guia_implementacion.tex (x2)
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Codificación y fuentes ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% --- Geometría ---
+\usepackage[
+  top=2.6cm, bottom=2.6cm,
+  left=2.2cm, right=2.2cm,
+  headheight=1.4cm,
+  headsep=0.5cm,
+  footskip=1.0cm
+]{geometry}
+
+% --- Color ---
+\usepackage[table,dvipsnames]{xcolor}
+\definecolor{naranja}{HTML}{E8751A}
+\definecolor{melocoton}{HTML}{FDF3EC}
+\definecolor{naranjaclaro}{HTML}{FAD7B5}
+\definecolor{gristabla}{HTML}{F5F5F5}
+\definecolor{griscode}{HTML}{EEEEEE}
+\definecolor{blancotexto}{HTML}{FFFFFF}
+\definecolor{grisoscuro}{HTML}{444444}
+
+% --- Gráficos y TikZ ---
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+
+% --- Tablas ---
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{makecell}
+
+% --- Cajas de color ---
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% --- Header / Footer ---
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+% --- Listas ---
+\usepackage{enumitem}
+\usepackage{amssymb}   % \square
+
+% --- Hipervínculos ---
+\usepackage[colorlinks=true,linkcolor=naranja,urlcolor=naranja]{hyperref}
+
+% --- Miscelánea ---
+\usepackage{microtype}
+\usepackage{xspace}
+\usepackage{setspace}
+\usepackage{parskip}
+
+% ============================================================
+%  ESTILOS REUTILIZABLES
+% ============================================================
+
+% -- Checklist naranja --
+\newlist{checklist}{itemize}{1}
+\setlist[checklist]{
+  label={\textcolor{naranja}{$\square$}},
+  leftmargin=1.6em,
+  itemsep=2pt,
+  parsep=0pt
+}
+
+% -- tcolorbox: Perfil (borde naranja, fondo melocotón) --
+\tcbset{
+  perfilbox/.style={
+    colback=melocoton,
+    colframe=naranja,
+    fonttitle=\bfseries\color{naranja},
+    boxrule=1.2pt,
+    arc=4pt,
+    left=6pt, right=6pt, top=4pt, bottom=4pt,
+    breakable
+  }
+}
+
+% -- tcolorbox: Árbol de dependencias (fondo gris) --
+\tcbset{
+  arbolbox/.style={
+    colback=griscode,
+    colframe=naranja,
+    boxrule=1pt,
+    arc=4pt,
+    left=8pt, right=8pt, top=6pt, bottom=6pt,
+    breakable
+  }
+}
+
+% -- Comando módulo con texttt + naranja --
+\newcommand{\modulo}[1]{\texttt{\textcolor{naranja}{#1}}}
+
+% -- Sección con línea naranja --
+\usepackage{titlesec}
+\titleformat{\section}
+  {\Large\bfseries\color{naranja}}
+  {\thesection.}{0.5em}{}[{\color{naranja}\titlerule[1.5pt]}]
+
+\titleformat{\subsection}
+  {\large\bfseries\color{grisoscuro}}
+  {\thesubsection}{0.5em}{}
+
+\titlespacing{\section}{0pt}{18pt}{8pt}
+\titlespacing{\subsection}{0pt}{12pt}{4pt}
+
+% ============================================================
+%  HEADER Y FOOTER DE PÁGINAS INTERIORES
+% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+
+\fancyhead[L]{%
+  \includegraphics[height=0.8cm]{Logo/logo.png}%
+  \hspace{6pt}%
+  \textcolor{naranja}{\rule[-2pt]{0.8pt}{0.9cm}}%
+  \hspace{6pt}%
+  \small\textcolor{grisoscuro}{Guía de Implementación — Odoo 19 Venezuela}%
+}
+\fancyfoot[L]{\small\textcolor{naranja}{Consultoría ERP | Tech}}
+\fancyfoot[R]{\small\textcolor{grisoscuro}{Página \thepage\ de \pageref{LastPage}}}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{naranjaclaro}\leaders\hrule height \footrulewidth\hfill}}
+
+% Página de portada sin header/footer
+\fancypagestyle{portada}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+
+% ============================================================
+%  MACROS AUXILIARES PARA TABLAS
+% ============================================================
+\newcommand{\thead}[1]{%
+  \cellcolor{naranja}\textcolor{white}{\textbf{#1}}%
+}
+\newcommand{\theadw}[1]{%
+  \cellcolor{naranja}\textcolor{white}{\textbf{#1}}%
+}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ============================================================
+%  INICIO DEL DOCUMENTO
+% ============================================================
+\begin{document}
+
+% ============================================================
+%  PORTADA
+% ============================================================
+\thispagestyle{portada}
+\begin{titlepage}
+
+\begin{tikzpicture}[remember picture, overlay]
+  % Franja naranja diagonal en la parte superior
+  \fill[naranja]
+    ([yshift=-7.0cm]current page.north west)
+    -- ([yshift=-9.5cm]current page.north east)
+    -- ([yshift=-9.9cm]current page.north east)
+    -- ([yshift=-7.4cm]current page.north west)
+    -- cycle;
+
+  % Barra naranja en el pie
+  \fill[naranja]
+    (current page.south west)
+    -- (current page.south east)
+    -- ([yshift=1.1cm]current page.south east)
+    -- ([yshift=1.1cm]current page.south west)
+    -- cycle;
+\end{tikzpicture}
+
+% -- Logo arriba izquierda --
+\vspace*{0.4cm}
+\begin{minipage}[t]{0.48\textwidth}
+  \raggedright
+  \includegraphics[height=1.8cm]{Logo/logo.png}\\[4pt]
+  {\color{naranja}\textbf{Consultoría ERP | Tech}}
+\end{minipage}%
+\hfill
+% -- Datos de contacto arriba derecha --
+\begin{minipage}[t]{0.46\textwidth}
+  \raggedleft
+  \small\textcolor{grisoscuro}{
+    \textbf{Consultoría ERP | Tech}\\
+    contacto@erptech.ve\\
+    +58 212 000 0000\\
+    www.erptech.ve
+  }
+\end{minipage}
+
+\vspace{4.5cm}
+
+% -- Título principal --
+\begin{center}
+  {\fontsize{36}{42}\selectfont\bfseries\color{naranja} Guía de Implementación}\\[6pt]
+  {\fontsize{26}{32}\selectfont\bfseries\color{grisoscuro} Odoo 19 — Venezuela}\\[4pt]
+  {\color{naranja}\rule{12cm}{1.5pt}}
+\end{center}
+
+\vspace{1.2cm}
+
+% -- Tabla de metadata --
+\begin{center}
+\begin{tabular}{L{3.8cm} L{7.5cm}}
+  \rowcolor{naranja}
+  \textcolor{white}{\textbf{Campo}} & \textcolor{white}{\textbf{Valor}} \\
+  \rowcolor{gristabla}
+  Versión & 1.0 \\
+  \rowcolor{white}
+  Fecha & Junio 2026 \\
+  \rowcolor{gristabla}
+  Módulos locales & 33 módulos de localización Venezuela \\
+  \rowcolor{white}
+  Rama & 19.0 \\
+  \rowcolor{gristabla}
+  Base Odoo & Odoo 19 Community / Enterprise \\
+  \rowcolor{white}
+  Preparado por & Consultoría ERP | Tech \\
+\end{tabular}
+\end{center}
+
+\vfill
+
+% Texto sobre la barra pie naranja
+\begin{center}
+  \textcolor{white}{\textbf{Documento Confidencial — Consultoría ERP | Tech \hfill Odoo 19 Venezuela}}
+\end{center}
+\vspace{0.5cm}
+
+\end{titlepage}
+
+% ============================================================
+%  TABLA DE CONTENIDO
+% ============================================================
+\setcounter{page}{1}
+\tableofcontents
+\clearpage
+
+% ============================================================
+%  SECCIÓN 1 — LEVANTAMIENTO PREVIO
+% ============================================================
+\section{Levantamiento Previo}
+
+Esta sección contiene los formularios de recolección de información que deben completarse antes de iniciar la instalación de los módulos de localización Venezuela.
+
+% ---------- 1.1 Datos Fiscales ----------
+\subsection{Datos Fiscales}
+
+\begin{longtable}{L{5.0cm} L{4.5cm} L{5.0cm}}
+  \rowcolor{naranja}
+  \thead{Dato} & \thead{Valor} & \thead{Impacto} \\
+  \endfirsthead
+  \rowcolor{naranja}
+  \thead{Dato} & \thead{Valor} & \thead{Impacto} \\
+  \endhead
+  \rowcolor{gristabla}
+  RIF completo & & \modulo{l10n\_ve\_contact} \\
+  \rowcolor{white}
+  Razón social exacta & & Portada factura, ARCV \\
+  \rowcolor{gristabla}
+  Dirección fiscal & & Factura SENIAT Art.57 \\
+  \rowcolor{white}
+  Teléfono y email & & Datos emisor factura \\
+  \rowcolor{gristabla}
+  Tipo de contribuyente & Ordinario / Especial / Exento & Retenciones IVA, ISLR \\
+  \rowcolor{white}
+  ¿Es agente de retención de IVA? & Sí / No & \modulo{l10n\_ve\_payment\_extension} \\
+  \rowcolor{gristabla}
+  ¿Es agente de retención de ISLR? & Sí / No & \modulo{l10n\_ve\_payment\_extension} \\
+  \rowcolor{white}
+  ¿Retiene impuesto municipal? & Sí / No & \modulo{l10n\_ve\_payment\_extension} \\
+  \rowcolor{gristabla}
+  Resolución de contribuyente especial & & Comprobante ARCV \\
+  \rowcolor{white}
+  Actividad económica principal & & Retención municipal \\
+  \rowcolor{gristabla}
+  Valor actual de la UT & & \modulo{l10n\_ve\_accountant} \\
+\end{longtable}
+
+% ---------- 1.2 Operaciones en Moneda Extranjera ----------
+\subsection{Operaciones en Moneda Extranjera}
+
+\begin{longtable}{L{5.5cm} L{2.5cm} L{6.5cm}}
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Sí / No} & \thead{Impacto} \\
+  \endfirsthead
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Sí / No} & \thead{Impacto} \\
+  \endhead
+  \rowcolor{gristabla}
+  ¿Factura en USD u otra divisa? & & \modulo{l10n\_ve\_rate}, \modulo{l10n\_ve\_invoice} \\
+  \rowcolor{white}
+  ¿Recibe pagos en divisas? & & \modulo{l10n\_ve\_igtf} \\
+  \rowcolor{gristabla}
+  ¿Realiza anticipos en divisas? & & \modulo{l10n\_ve\_igtf} \\
+  \rowcolor{white}
+  ¿Necesita sincronización automática BCV? & & \modulo{l10n\_ve\_currency\_rate\_live} \\
+  \rowcolor{gristabla}
+  Tasa de cambio vigente al inicio & & Configuración inicial día 1 \\
+\end{longtable}
+
+% ---------- 1.3 Emisión de Facturas ----------
+\subsection{Emisión de Facturas}
+
+\begin{longtable}{L{5.0cm} L{4.0cm} L{5.5cm}}
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Opciones} & \thead{Módulo resultante} \\
+  \endfirsthead
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Opciones} & \thead{Módulo resultante} \\
+  \endhead
+  \rowcolor{gristabla}
+  ¿Cómo emite facturas actualmente? & Formato libre / Máquina fiscal / Factura digital & Determina perfil E o no \\
+  \rowcolor{white}
+  ¿Tiene máquina fiscal TFHKA? & Sí / No & \modulo{l10n\_ve\_iot\_mf} \\
+  \rowcolor{gristabla}
+  ¿Necesita facturación digital con retenciones automáticas? & Sí / No & \modulo{l10n\_ve\_invoice\_digital} \\
+  \rowcolor{white}
+  Prefijo del número de control & ej. 00 & \modulo{od\_journal\_sequence} \\
+  \rowcolor{gristabla}
+  ¿Maneja notas de débito? & Sí / No & \modulo{l10n\_ve\_invoice} \\
+\end{longtable}
+
+% ---------- 1.4 Operaciones Comerciales ----------
+\subsection{Operaciones Comerciales}
+
+\begin{longtable}{L{5.0cm} L{2.5cm} L{7.0cm}}
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulos adicionales} \\
+  \endfirsthead
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulos adicionales} \\
+  \endhead
+  \rowcolor{gristabla}
+  ¿Maneja inventario físico? & & \modulo{l10n\_ve\_stock}, \modulo{l10n\_ve\_stock\_account} \\
+  \rowcolor{white}
+  ¿Emite guías de despacho? & & \modulo{l10n\_ve\_stock\_account} \\
+  \rowcolor{gristabla}
+  ¿Tiene punto de venta (caja)? & & \modulo{l10n\_ve\_pos} \\
+  \rowcolor{white}
+  ¿El POS usa máquina fiscal? & & \modulo{l10n\_ve\_pos\_mf} \\
+  \rowcolor{gristabla}
+  ¿Realiza donaciones registrables? & & \modulo{l10n\_ve\_donation} \\
+  \rowcolor{white}
+  ¿Necesita programa de fidelización? & & \modulo{l10n\_ve\_invoice\_loyalty} \\
+  \rowcolor{gristabla}
+  ¿Maneja listas de precio en divisas? & & \modulo{l10n\_ve\_price\_list} \\
+\end{longtable}
+
+% ---------- 1.5 Requerimientos Adicionales ----------
+\subsection{Requerimientos Adicionales}
+
+\begin{longtable}{L{5.5cm} L{2.5cm} L{6.5cm}}
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulo} \\
+  \endfirsthead
+  \rowcolor{naranja}
+  \thead{Pregunta} & \thead{Sí / No} & \thead{Módulo} \\
+  \endhead
+  \rowcolor{gristabla}
+  ¿Requiere bloqueo de períodos fiscales? & & \modulo{l10n\_ve\_fiscal\_lock\_days} \\
+  \rowcolor{white}
+  ¿Requiere auditoría de cambios contables? & & \modulo{l10n\_ve\_auditlog} \\
+  \rowcolor{gristabla}
+  ¿Necesita cierre formal de año fiscal? & & \modulo{l10n\_ve\_account\_fiscalyear\_closing} \\
+  \rowcolor{white}
+  ¿Valida referencias bancarias en pagos? & & \modulo{l10n\_ve\_ref\_bank} \\
+  \rowcolor{gristabla}
+  ¿Usa Odoo Studio? & & \modulo{l10n\_ve\_studio} \\
+\end{longtable}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 2 — PERFILES DE EMPRESA
+% ============================================================
+\section{Perfiles de Empresa}
+
+Cada empresa se encuadra en uno o más perfiles según sus características operativas y obligaciones fiscales. Los perfiles son acumulativos: el Perfil B incluye todo lo del Perfil A, y así sucesivamente.
+
+\begin{tcolorbox}[perfilbox, title={Perfil A — Servicios, Contribuyente Ordinario}]
+Aplica a: firma de consultoría, agencia de servicios, empresa de servicios profesionales. Sin inventario físico, sin obligación de retención (no es agente de retención). Puede operar en divisas y estar sujeto a IGTF.
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item Facturación venezolana con número de control
+  \item Tipos de cambio BCV (VES/USD)
+  \item Contactos con RIF y geografía venezolana
+  \item IGTF 3\% si opera con pagos en divisas
+  \item Sin retenciones de IVA ni ISLR
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil B — Contribuyente Especial}]
+Incluye todo el Perfil A, más obligación de retener IVA (75\%), ISLR y/o retención municipal a sus proveedores.
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item Resolución SENIAT de Contribuyente Especial
+  \item Generación de ARCV (comprobantes de retención) imprimibles
+  \item Retención IVA: 75\% del impuesto al pagar a proveedores
+  \item Retención ISLR: según concepto y alícuota
+  \item Retención Municipal: según actividad económica
+  \item Bloqueo de períodos y auditoría de cambios (recomendado)
+  \item Validación de referencia bancaria (recomendado)
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil C — Comercio con Inventario}]
+Incluye todo el Perfil B (o Perfil A si es ordinario), más manejo de inventario físico y logística.
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item Inventario con valoración en VES y precios en USD
+  \item Guías de despacho según normativa SENIAT
+  \item Razones de transferencia (venta, traslado, donación, muestra)
+  \item Órdenes de compra integradas con recepciones
+  \item Listas de precio multimoneda (opcional)
+  \item Donaciones con certificado imprimible (opcional)
+  \item Libro de inventario para cierre fiscal
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil D — Con Punto de Venta}]
+Incluye todo el Perfil C (o Perfil B si no tiene inventario), más punto de venta multimoneda.
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item POS venezolano con búsqueda de clientes por RIF
+  \item Pago mixto VES/USD en el mismo ticket
+  \item IGTF 3\% automático en pagos en divisas desde POS
+  \item Tasa de cambio del día configurable en el POS
+  \item Cierre de sesión con resumen por tipo de pago y moneda
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil E — Con Máquina Fiscal TFHKA}]
+Aplica sobre cualquier perfil que requiera integración con máquina fiscal TFHKA (The Factory HKA).
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item Integración IoT con dispositivo TFHKA vía IP + token
+  \item Las facturas reciben número de secuencia fiscal de la máquina
+  \item Retenciones automáticas al confirmar factura (facturación digital)
+  \item POS conectado a máquina fiscal con libro de ventas fiscal
+  \item Reporte Z al final del día desde Odoo
+\end{itemize}
+\end{tcolorbox}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 3 — APPS ODOO NATIVAS REQUERIDAS
+% ============================================================
+\section{Apps Odoo Nativas Requeridas}
+
+Las siguientes aplicaciones nativas de Odoo 19 deben instalarse antes de proceder con los módulos de localización Venezuela.
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{4.2cm} L{6.0cm}}
+  \rowcolor{naranja}
+  \thead{App} & \thead{Módulo técnico} & \thead{Obligatoria para} \\
+  \rowcolor{gristabla}
+  Contabilidad & \modulo{account + account\_accountant} & Todos los perfiles \\
+  \rowcolor{white}
+  Contactos & \modulo{contacts} & Todos los perfiles \\
+  \rowcolor{gristabla}
+  Ventas & \modulo{sale} & Perfiles C, D, E \\
+  \rowcolor{white}
+  Compras & \modulo{purchase} & Perfiles C, D, E \\
+  \rowcolor{gristabla}
+  Inventario & \modulo{stock} & Perfiles C, D, E \\
+  \rowcolor{white}
+  Punto de Venta & \modulo{point\_of\_sale} & Perfiles D, E \\
+  \rowcolor{gristabla}
+  IoT & \modulo{iot} & Solo Perfil E \\
+\end{tabular}
+\end{center}
+
+\vspace{10pt}
+\begin{tcolorbox}[colback=naranjaclaro!30, colframe=naranja, boxrule=0.8pt, arc=3pt]
+  \textbf{Nota:} En Odoo 19 con país Venezuela, el plan de cuentas oficial (\modulo{l10n\_ve}) se carga automáticamente al configurar la empresa con Venezuela como país.
+\end{tcolorbox}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 4 — INSTALACIÓN POR PERFIL
+% ============================================================
+\section{Instalación por Perfil}
+
+\begin{tcolorbox}[perfilbox, title={Perfil A — Módulos a instalar}]
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item \modulo{l10n\_ve\_base}
+  \item \modulo{l10n\_ve\_rate}
+  \item \modulo{l10n\_ve\_location}
+  \item \modulo{l10n\_ve\_contact}
+  \item \modulo{od\_journal\_sequence}
+  \item \modulo{l10n\_ve\_accountant}
+  \item \modulo{l10n\_ve\_invoice}
+  \item \modulo{l10n\_ve\_tax\_payer}
+  \item \modulo{l10n\_ve\_igtf} \textit{(solo si opera en divisas)}
+  \item \modulo{l10n\_ve\_filter\_partner}
+  \item \modulo{l10n\_ve\_suggested\_amount}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil B — Módulos adicionales sobre Perfil A}]
+\textit{Acumulativo: instalar todos los del Perfil A más:}
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item[+] \modulo{l10n\_ve\_payment\_extension}
+  \item[+] \modulo{l10n\_ve\_ref\_bank}
+  \item[+] \modulo{l10n\_ve\_auditlog}
+  \item[+] \modulo{l10n\_ve\_fiscal\_lock\_days}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil C — Módulos adicionales sobre Perfil B}]
+\textit{Acumulativo: instalar todos los del Perfil B más:}
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item[+] \modulo{l10n\_ve\_stock}
+  \item[+] \modulo{l10n\_ve\_sale}
+  \item[+] \modulo{l10n\_ve\_purchase}
+  \item[+] \modulo{l10n\_ve\_stock\_purchase}
+  \item[+] \modulo{l10n\_ve\_donation} \textit{(opcional)}
+  \item[+] \modulo{l10n\_ve\_stock\_account}
+  \item[+] \modulo{l10n\_ve\_stock\_reports}
+  \item[+] \modulo{l10n\_ve\_price\_list}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil D — Módulos adicionales sobre Perfil B o C}]
+\textit{Acumulativo: instalar todos los del Perfil B (o C si hay inventario) más:}
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item[+] \modulo{l10n\_ve\_pos}
+  \item[+] \modulo{l10n\_ve\_pos\_igtf}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+\begin{tcolorbox}[perfilbox, title={Perfil E — Módulos adicionales sobre Perfil D}]
+\textit{Acumulativo: instalar todos los del Perfil D más:}
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item[+] \modulo{l10n\_ve\_iot\_mf}
+  \item[+] \modulo{l10n\_ve\_pos\_mf}
+  \item[+] \modulo{l10n\_ve\_invoice\_digital}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{12pt}
+
+\subsection{Módulos Opcionales}
+
+\begin{center}
+\begin{tabular}{L{6.5cm} L{7.5cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Cuándo agregar} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_currency\_rate\_live} & Si requieren sincronización automática BCV \\
+  \rowcolor{white}
+  \modulo{account\_fiscal\_year\_closing} + \modulo{l10n\_ve\_account\_fiscalyear\_closing} & Al final del primer año fiscal \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_invoice\_loyalty} & Si tienen programa de puntos / fidelización \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_studio} & Si el cliente usa Odoo Studio \\
+\end{tabular}
+\end{center}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 5 — CONFIGURACIÓN POST-INSTALACIÓN
+% ============================================================
+\section{Configuración Post-Instalación}
+
+\subsection{Empresa}
+
+\begin{checklist}
+  \item \textbf{Ajustes $\rightarrow$ Empresas $\rightarrow$ [empresa]:} completar razón social exacta
+  \item RIF con prefijo correcto: \texttt{J-12345678-9}
+  \item Dirección fiscal completa (estado, municipio, parroquia)
+  \item Teléfono y correo electrónico de la empresa
+  \item Logo de la empresa en resolución adecuada
+  \item Marcar \textbf{Contribuyente Especial} si aplica + número de resolución SENIAT
+  \item Verificar que el país es \textbf{Venezuela} y el plan de cuentas \modulo{l10n\_ve} está aplicado
+\end{checklist}
+
+\subsection{Tipos de Cambio}
+
+\begin{checklist}
+  \item \textbf{Contabilidad $\rightarrow$ Configuración $\rightarrow$ Divisas:} activar USD
+  \item Crear tasa de cambio inicial con el valor BCV del día de inicio
+  \item Verificar que VES (Bolívar) es la moneda base de la empresa
+  \item Si se usa \modulo{l10n\_ve\_currency\_rate\_live}: configurar proveedor BCV y activar el cron de actualización
+\end{checklist}
+
+\subsection{Unidad Tributaria}
+
+\begin{checklist}
+  \item \textbf{Contabilidad $\rightarrow$ Configuración $\rightarrow$ Unidad Tributaria}
+  \item Crear registro con el valor vigente publicado por el SENIAT
+  \item Este valor afecta los cálculos de retención ISLR con acumulados anuales
+\end{checklist}
+
+\subsection{Diarios Contables}
+
+\begin{checklist}
+  \item Configurar secuencia del diario de \textbf{Ventas} con prefijo apropiado (ej. \texttt{FAC})
+  \item Diario de Ventas: configurar prefijo de número de control (ej. \texttt{00})
+  \item Configurar secuencia del diario de \textbf{Compras} (ej. \texttt{COMP})
+  \item Diario \textbf{Banco USD}: marcar \emph{Aplica IGTF} si el cliente opera en divisas
+  \item Diario \textbf{Banco VES}: configurar con moneda VES
+  \item Diarios de \textbf{Caja}: configurar método de pago y moneda
+  \item Diarios bancarios: configurar validación de referencia si se instaló \modulo{l10n\_ve\_ref\_bank}
+\end{checklist}
+
+\subsection{Impuestos}
+
+\begin{checklist}
+  \item Verificar existencia de: IVA 16\%, IVA 8\%, Exento (0\%), IVA Importación
+  \item Configurar cuentas contables de cada impuesto (IVA por pagar, IVA soportado)
+  \item Si hay IGTF: configurar \textbf{Cuenta Puente IGTF} en Ajustes $\rightarrow$ Contabilidad
+\end{checklist}
+
+\subsection{Retenciones (Perfiles B, C, D, E)}
+
+\begin{checklist}
+  \item \textbf{Contabilidad $\rightarrow$ Configuración $\rightarrow$ Tipos de Retención:} verificar IVA, ISLR, Municipal
+  \item Configurar conceptos de retención ISLR con sus alícuotas (honorarios, arrendamiento, etc.)
+  \item Si retiene Municipal: cargar Actividades Económicas y sus alícuotas
+  \item Configurar firma del representante legal para comprobantes ARCV (nombre + cargo)
+  \item Secuencias de numeración independiente para cada tipo de retención
+\end{checklist}
+
+\subsection{Contactos y Proveedores}
+
+\begin{checklist}
+  \item Cargar proveedores principales con RIF completo y prefijo correcto
+  \item Marcar cada proveedor según sus características: Contribuyente Especial, Retiene IVA, Retiene ISLR, Retiene Municipal
+  \item Asignar actividad económica a los proveedores con retención municipal
+\end{checklist}
+
+\subsection{Inventario (Perfiles C, D, E)}
+
+\begin{checklist}
+  \item Configurar almacenes con nombres y ubicaciones correctas
+  \item Cargar Razones de Transferencia: Venta, Traslado, Donación, Muestra, Consumo Interno, etc.
+  \item Configurar secuencia de numeración de Guías de Despacho
+  \item Asignar cuentas contables a las categorías de productos
+\end{checklist}
+
+\subsection{Punto de Venta (Perfiles D, E)}
+
+\begin{checklist}
+  \item Configurar POS: almacén asignado, tasa de cambio por defecto, métodos de pago
+  \item Método de pago VES: crear y configurar como moneda local
+  \item Método de pago USD: si aplica IGTF, marcar el flag correspondiente
+  \item Configurar impresora de tickets si aplica (modelo y puerto)
+\end{checklist}
+
+\subsection{Máquina Fiscal (Perfil E)}
+
+\begin{checklist}
+  \item \textbf{IoT $\rightarrow$ Dispositivos:} registrar máquina fiscal con IP y token TFHKA
+  \item Mapear impuestos IVA de Odoo a los códigos de la máquina fiscal
+  \item Marcar el diario de ventas como \emph{Con Máquina Fiscal}
+  \item Realizar prueba de conexión desde Odoo y verificar respuesta exitosa
+\end{checklist}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 6 — CHECKLIST DE HOMOLOGACIÓN SENIAT
+% ============================================================
+\section{Checklist de Homologación SENIAT}
+
+El SENIAT no tiene un proceso formal de homologación de software para todos los casos, pero sí exige que los documentos emitidos cumplan con los requisitos del Artículo 57 de la Ley del IVA y las providencias administrativas vigentes.
+
+\subsection{Requisitos de la Factura (Art.\ 57 Ley IVA + Providencia 0071)}
+
+\begin{checklist}
+  \item Denominación \textbf{``FACTURA''} claramente visible en el documento
+  \item Número de Control correlativo (ej. \texttt{No. 00-00000001})
+  \item Número de factura (secuencia del diario)
+  \item Fecha de emisión
+  \item Razón social del emisor exactamente igual al RIF-SENIAT
+  \item RIF del emisor con prefijo (J, V, E, G)
+  \item Dirección fiscal del emisor
+  \item Teléfono del emisor
+  \item Nombre o razón social del cliente
+  \item RIF del cliente
+  \item Dirección del cliente
+  \item Descripción del bien o servicio prestado
+  \item Cantidad, precio unitario y precio total por línea
+  \item Base imponible (monto gravado)
+  \item Alícuota del IVA aplicada (16\% o 8\%)
+  \item Monto del IVA
+  \item Total de la factura
+  \item Si opera en divisas: tasa de cambio utilizada y equivalente en VES
+  \item Si aplica IGTF: línea separada de IGTF 3\%
+\end{checklist}
+
+\subsection{Comprobantes de Retención (Contribuyentes Especiales)}
+
+\begin{checklist}
+  \item Denominación \textbf{``COMPROBANTE DE RETENCIÓN''} claramente visible
+  \item Número del comprobante (secuencia propia, independiente de facturas)
+  \item Fecha de emisión
+  \item Datos del agente de retención: razón social, RIF, dirección, número de resolución SENIAT
+  \item Datos del proveedor retenido: razón social y RIF
+  \item Número de factura retenida y fecha de la factura
+  \item Monto total de la factura
+  \item Base imponible retenida
+  \item Alícuota de retención (75\% del IVA para contribuyentes especiales)
+  \item Monto retenido
+  \item Período fiscal al que corresponde
+  \item Firma del representante legal o persona autorizada
+\end{checklist}
+
+\subsection{Guía de Despacho}
+
+\begin{checklist}
+  \item Denominación \textbf{``GUÍA DE DESPACHO''} claramente visible
+  \item Número correlativo
+  \item Fecha de emisión
+  \item Datos del remitente con RIF
+  \item Datos del destinatario con RIF
+  \item Descripción de los bienes, cantidad y unidad de medida
+  \item Razón de la transferencia (venta, traslado, donación, etc.)
+  \item Datos del transportista
+  \item Referencia a la factura o pedido que la origina
+\end{checklist}
+
+\subsection{Validación de RIF}
+
+\begin{checklist}
+  \item Todo cliente y proveedor tiene RIF cargado con prefijo correcto (J, V, E, G, P)
+  \item El sistema rechaza guardar un contacto sin RIF si se configura como obligatorio
+  \item Las facturas muestran el RIF del cliente correctamente formateado
+\end{checklist}
+
+\subsection{Control de Numeración}
+
+\begin{checklist}
+  \item Los números de control son correlativos sin saltos, por diario
+  \item Las notas de débito tienen su propio número de control separado
+  \item Las notas de crédito tienen su propio número de control
+  \item Cada diario tiene su secuencia independiente (\modulo{od\_journal\_sequence})
+\end{checklist}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 7 — GO-LIVE CHECKLIST
+% ============================================================
+\section{Go-Live Checklist}
+
+\subsection*{Datos Maestros}
+\begin{checklist}
+  \item Empresa configurada con todos los datos fiscales (RIF, razón social, dirección, teléfono, logo)
+  \item Tasa de cambio del día cargada (BCV oficial)
+  \item Valor de la UT actualizado con el valor vigente SENIAT
+  \item Todos los proveedores habituales cargados con RIF y configuración de retenciones
+  \item Productos y servicios cargados con los impuestos correctos asignados
+  \item Cuentas bancarias de la empresa configuradas en Odoo
+\end{checklist}
+
+\subsection*{Secuencias}
+\begin{checklist}
+  \item Número de control de ventas inicia desde el número correcto según los correlativos existentes
+  \item Secuencias de retenciones IVA, ISLR y Municipal inician correctamente
+  \item Secuencias de guías de despacho (si aplica)
+\end{checklist}
+
+\subsection*{Accesos y Permisos}
+\begin{checklist}
+  \item Usuarios configurados con roles apropiados según su función
+  \item El contador tiene acceso a retenciones y cierre de períodos
+  \item El almacenista tiene acceso a guías de despacho pero no a módulos de contabilidad
+\end{checklist}
+
+\subsection*{Prueba Final}
+\begin{checklist}
+  \item Crear una factura de venta completa $\rightarrow$ confirmar $\rightarrow$ imprimir $\rightarrow$ verificar formato SENIAT
+  \item Crear pago de proveedor con retención (si contribuyente especial) $\rightarrow$ generar ARCV $\rightarrow$ imprimir
+  \item Crear pago en USD $\rightarrow$ verificar cargo automático de IGTF (si aplica)
+  \item Hacer venta en POS con pago mixto VES/USD (si aplica perfil D o E)
+  \item Validar que los asientos contables generados son correctos en Contabilidad
+\end{checklist}
+
+\subsection*{Bloqueo de Períodos}
+\begin{checklist}
+  \item Configurar \modulo{l10n\_ve\_fiscal\_lock\_days} para bloquear los períodos anteriores al inicio de operaciones en Odoo
+\end{checklist}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 8 — REFERENCIA DE MÓDULOS POR CAPA
+% ============================================================
+\section{Referencia de Módulos por Capa}
+
+\subsection{Capa 0 — Infraestructura Base}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_base} & Infraestructura técnica. Extiende \texttt{ir.module.module} e \texttt{ir.ui.view}. Deps: \texttt{base, web} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_rate} & Tipos de cambio venezolanos (BCV, paralela). Lógica VES/USD. Deps: \texttt{base, l10n\_ve\_base} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_currency\_rate\_live} & Proveedor BCV automático (opcional). Deps: \texttt{l10n\_ve\_rate, currency\_rate\_live} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 1 — Datos Geográficos y Contactos}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_location} & Ciudades, municipios (335) y parroquias de Venezuela. Modelos: \texttt{res.country.city}, \texttt{res.country.municipality}, \texttt{res.country.parish}. Deps: \texttt{base, contacts} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_contact} & RIF con prefijo V/E/J/G/P, tipo contribuyente, validación dígito verificador, enlace municipio/parroquia. Deps: \texttt{base, contacts, account, l10n\_ve\_rate, l10n\_ve\_location} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 2 — Contabilidad Core}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_accountant} & Motor contable venezolano. Campos \texttt{invoice\_date\_display}, \texttt{company\_currency\_rate}. Modelo \texttt{tax\_unit} (UT). Pagos multimoneda. Deps: \texttt{base, web, account, account\_reports, purchase, sale, l10n\_ve\_base, l10n\_ve\_rate, l10n\_ve\_contact} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 3 — Facturación y Secuencias}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{od\_journal\_sequence} & Numeración independiente por diario. Requerido para número de control. Deps: \texttt{account} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_invoice} & Campo \texttt{correlative} (número de control), \texttt{declaration\_unique\_of\_customs}, \texttt{invoice\_reception\_date}. Reporte factura formato libre SENIAT. Deps: \texttt{l10n\_ve\_rate, l10n\_ve\_base, l10n\_ve\_accountant, l10n\_ve\_contact, od\_journal\_sequence, account\_debit\_note} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 4 — Retenciones e Impuestos Especiales}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_tax\_payer} & Flags por partner: Retiene IVA/ISLR/Municipal. Deps: \texttt{base, l10n\_ve\_rate, l10n\_ve\_accountant} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_payment\_extension} & Retenciones IVA, ISLR, Municipal. ARCV imprimible. Modelos: \texttt{account.retention}, \texttt{account.retention.line}, \texttt{accumulated.fees}. Deps: \texttt{base, account, l10n\_ve\_rate, l10n\_ve\_accountant, l10n\_ve\_invoice, l10n\_ve\_location, l10n\_ve\_contact, l10n\_ve\_tax\_payer} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_igtf} & IGTF 3\% sobre pagos en divisas. Campos \texttt{bi\_igtf}, \texttt{is\_advance\_move}. Cuentas puente. Anticipos. Deps: \texttt{base, l10n\_ve\_accountant, l10n\_ve\_invoice, l10n\_ve\_tax\_payer, l10n\_ve\_base} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 5 — Inventario y Logística}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_filter\_partner} & Mixin técnico para filtro clientes/proveedores. Deps: \texttt{web} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_stock} & Inventario venezolano. Precios en divisas, valoración VES. Deps: \texttt{stock, product, l10n\_ve\_rate, stock\_delivery} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_stock\_account} & Guía de despacho (\texttt{stock.picking.guide.dispatch}), \texttt{transfer\_reason}, alertas autoconsumo. Deps: \texttt{l10n\_ve\_stock, l10n\_ve\_invoice, l10n\_ve\_accountant, l10n\_ve\_sale, l10n\_ve\_donation, sale\_stock, web} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_stock\_reports} & Libro de Inventario para cierre fiscal. Deps: \texttt{stock, account, sale\_stock} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_stock\_purchase} & Glue compras$\leftrightarrow$inventario. Deps: \texttt{purchase\_stock} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 6 — Ventas, Compras y POS}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_sale} & Ventas con tipos de cambio y precios en divisas. Deps: \texttt{base, l10n\_ve\_base, sale, l10n\_ve\_rate, l10n\_ve\_contact, l10n\_ve\_invoice, l10n\_ve\_filter\_partner, l10n\_ve\_stock} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_purchase} & Compras venezolanas (módulo liviano). Deps: \texttt{purchase, account} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_price\_list} & Listas de precio multimoneda. Deps: \texttt{account, account\_invoice\_pricelist, l10n\_ve\_sale} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_pos} & POS venezolano multimoneda, búsqueda por RIF. Deps: \texttt{base, point\_of\_sale, l10n\_ve\_rate, l10n\_ve\_contact, l10n\_ve\_stock, l10n\_ve\_location, l10n\_ve\_accountant} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_pos\_igtf} & IGTF 3\% en POS (JS/OWL). Deps: \texttt{base, l10n\_ve\_pos, l10n\_ve\_igtf} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 7 — Máquinas Fiscales e IoT}
+
+\begin{center}
+\begin{tabular}{L{3.8cm} L{10.2cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_iot\_mf} & Integración TFHKA (The Factory HKA). \texttt{iot.device} para máquina fiscal. Reporte Z. Deps: \texttt{iot, account, web, l10n\_ve\_invoice, l10n\_ve\_tax\_payer, l10n\_ve\_stock\_account} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_pos\_mf} & POS$\leftrightarrow$máquina fiscal. Libro de ventas fiscal. Deps: \texttt{point\_of\_sale, l10n\_ve\_pos, pos\_iot, l10n\_ve\_iot\_mf} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_invoice\_digital} & Retenciones automáticas al confirmar factura. Deps: \texttt{base, account, l10n\_ve\_igtf, account\_debit\_note, l10n\_ve\_invoice, l10n\_ve\_iot\_mf, l10n\_ve\_stock\_account, l10n\_ve\_payment\_extension, stock} \\
+\end{tabular}
+\end{center}
+
+\subsection{Capa 8 — Módulos Opcionales}
+
+\begin{center}
+\begin{tabular}{L{4.2cm} L{9.8cm}}
+  \rowcolor{naranja}
+  \thead{Módulo} & \thead{Descripción} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_fiscal\_lock\_days} & Bloqueo de períodos fiscales por fecha. Deps: \texttt{base, account\_accountant, l10n\_ve\_accountant} \\
+  \rowcolor{white}
+  \modulo{account\_fiscal\_year\_closing} & Base OCA para cierre de año. Wizard paso a paso. Deps: \texttt{account} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_account\_fiscalyear\_closing} & Cierre venezolano con tipos de cambio. Deps: \texttt{account\_fiscal\_year\_closing, l10n\_ve\_contact, l10n\_ve\_rate} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_ref\_bank} & Validación referencias bancarias por prefijo/longitud. Deps: \texttt{l10n\_ve\_invoice} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_suggested\_amount} & Monto sugerido en VES al pagar en USD. Deps: \texttt{account, l10n\_ve\_accountant} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_auditlog} & Auditoría cambios en \texttt{account.move} y \texttt{account.payment}. Deps: \texttt{l10n\_ve\_accountant, l10n\_ve\_payment\_extension} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_donation} & Donaciones con certificado imprimible. Deps: \texttt{l10n\_ve\_accountant, l10n\_ve\_stock, l10n\_ve\_invoice, l10n\_ve\_sale} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_invoice\_loyalty} & Fidelización en facturación venezolana. Deps: \texttt{l10n\_ve\_invoice, loyalty} \\
+  \rowcolor{gristabla}
+  \modulo{l10n\_ve\_studio} & Restricciones de Odoo Studio. Deps: \texttt{l10n\_ve\_base} \\
+  \rowcolor{white}
+  \modulo{l10n\_ve\_currency\_rate\_live} & Sincronización automática tasa BCV. Deps: \texttt{l10n\_ve\_rate, currency\_rate\_live} \\
+\end{tabular}
+\end{center}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 9 — ÁRBOL DE DEPENDENCIAS
+% ============================================================
+\section{Árbol de Dependencias}
+
+\begin{tcolorbox}[arbolbox]
+\begin{small}
+\begin{ttfamily}
+\begin{verbatim}
+base / web / account / account_accountant
+|
++-- l10n_ve_base
+|   +-- l10n_ve_rate
+|   |   +-- l10n_ve_location
+|   |   |   \-- l10n_ve_contact
+|   |   |       \-- l10n_ve_accountant  <-- nucleo contable
+|   |   |           +-- od_journal_sequence
+|   |   |           |   \-- l10n_ve_invoice
+|   |   |           |       +-- l10n_ve_tax_payer
+|   |   |           |       |   +-- l10n_ve_payment_extension  <- retenciones
+|   |   |           |       |   \-- l10n_ve_igtf               <- IGTF
+|   |   |           |       +-- l10n_ve_ref_bank
+|   |   |           |       \-- l10n_ve_invoice_loyalty
+|   |   |           +-- l10n_ve_suggested_amount
+|   |   |           \-- l10n_ve_fiscal_lock_days
+|   |   +-- l10n_ve_stock
+|   |   |   +-- l10n_ve_sale
+|   |   |   |   \-- l10n_ve_price_list
+|   |   |   +-- l10n_ve_donation
+|   |   |   \-- l10n_ve_stock_account   <- guias de despacho
+|   |   |       +-- l10n_ve_iot_mf      <- maquinas fiscales
+|   |   |       |   +-- l10n_ve_invoice_digital
+|   |   |       |   \-- l10n_ve_pos_mf
+|   |   |       \-- l10n_ve_stock_reports
+|   |   \-- l10n_ve_currency_rate_live
+|   \-- l10n_ve_studio
+|
++-- l10n_ve_filter_partner
+|
++-- l10n_ve_pos
+|   +-- l10n_ve_pos_igtf
+|   \-- l10n_ve_pos_mf
+|
++-- l10n_ve_purchase
++-- l10n_ve_stock_purchase
+|
++-- account_fiscal_year_closing
+|   \-- l10n_ve_account_fiscalyear_closing
+|
+\-- l10n_ve_auditlog
+\end{verbatim}
+\end{ttfamily}
+\end{small}
+\end{tcolorbox}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 10 — COBERTURA DE LA LOCALIZACIÓN
+% ============================================================
+\section{Cobertura de la Localización}
+
+\subsection*{Cubre completamente}
+
+\begin{center}
+\begin{tabular}{L{6.0cm} L{8.0cm}}
+  \rowcolor{naranja}
+  \thead{Área} & \thead{Módulo(s)} \\
+  \rowcolor{gristabla}
+  Plan de cuentas venezolano & Oficial Odoo 19 (\texttt{l10n\_ve} core) \\
+  \rowcolor{white}
+  Validación de RIF & \modulo{l10n\_ve\_contact} \\
+  \rowcolor{gristabla}
+  Geografía (estados/municipios/parroquias) & \modulo{l10n\_ve\_location} \\
+  \rowcolor{white}
+  Tipos de cambio BCV & \modulo{l10n\_ve\_rate}, \modulo{l10n\_ve\_currency\_rate\_live} \\
+  \rowcolor{gristabla}
+  Unidad Tributaria (UT) & \modulo{l10n\_ve\_accountant} \\
+  \rowcolor{white}
+  Factura con número de control & \modulo{l10n\_ve\_invoice} \\
+  \rowcolor{gristabla}
+  Notas de débito venezolanas & \modulo{l10n\_ve\_invoice} \\
+  \rowcolor{white}
+  Retención de IVA & \modulo{l10n\_ve\_payment\_extension} \\
+  \rowcolor{gristabla}
+  Retención de ISLR & \modulo{l10n\_ve\_payment\_extension} \\
+  \rowcolor{white}
+  Retención Municipal & \modulo{l10n\_ve\_payment\_extension} \\
+  \rowcolor{gristabla}
+  IGTF (3\% transacciones financieras) & \modulo{l10n\_ve\_igtf}, \modulo{l10n\_ve\_pos\_igtf} \\
+  \rowcolor{white}
+  Comprobantes de retención (ARCV) & \modulo{l10n\_ve\_payment\_extension} \\
+  \rowcolor{gristabla}
+  Anticipos clientes/proveedores & \modulo{l10n\_ve\_igtf} \\
+  \rowcolor{white}
+  Guía de despacho & \modulo{l10n\_ve\_stock\_account} \\
+  \rowcolor{gristabla}
+  Cierre fiscal anual & \modulo{l10n\_ve\_account\_fiscalyear\_closing} \\
+  \rowcolor{white}
+  Bloqueo de períodos & \modulo{l10n\_ve\_fiscal\_lock\_days} \\
+  \rowcolor{gristabla}
+  Libro de inventario & \modulo{l10n\_ve\_stock\_reports} \\
+  \rowcolor{white}
+  Máquinas fiscales TFHKA & \modulo{l10n\_ve\_iot\_mf}, \modulo{l10n\_ve\_pos\_mf} \\
+  \rowcolor{gristabla}
+  POS multimoneda & \modulo{l10n\_ve\_pos} \\
+  \rowcolor{white}
+  Donaciones con certificado & \modulo{l10n\_ve\_donation} \\
+  \rowcolor{gristabla}
+  Auditoría contable & \modulo{l10n\_ve\_auditlog} \\
+\end{tabular}
+\end{center}
+
+\vspace{12pt}
+
+\subsection*{No cubre}
+
+\begin{center}
+\begin{tabular}{L{5.5cm} L{8.5cm}}
+  \rowcolor{naranja}
+  \thead{Área} & \thead{Detalle} \\
+  \rowcolor{gristabla}
+  Declaración mensual de IVA (Forma 30) & No hay exportación automática al formato SENIAT \\
+  \rowcolor{white}
+  ARC en formato XML SENIAT & Los comprobantes se generan en PDF pero no en XML \\
+  \rowcolor{gristabla}
+  Nómina venezolana & No hay módulo de nómina local (IVSS, FAOV, LCT, utilidades) \\
+  \rowcolor{white}
+  Libro de compras y ventas & No se observó reporte de libro CV estándar SENIAT \\
+  \rowcolor{gristabla}
+  Declaración de impuesto municipal & Existe retención pero no módulo de declaración/pago municipal \\
+  \rowcolor{white}
+  Contabilidad pública / gobierno & La localización es para empresas privadas \\
+\end{tabular}
+\end{center}
+
+\clearpage
+
+% ============================================================
+%  SECCIÓN 11 — CHECKLIST DE PRUEBAS POR MÓDULO
+% ============================================================
+\section{Checklist de Pruebas por Módulo}
+
+\subsection{Plan de cuentas oficial Odoo 19 (\texttt{l10n\_ve} core)}
+
+\begin{checklist}
+  \item Al crear la empresa, seleccionar \textbf{Venezuela} como país
+  \item Verificar que el plan de cuentas venezolano se aplica automáticamente
+  \item Ir a Contabilidad $\rightarrow$ Configuración $\rightarrow$ Impuestos: confirmar existencia de IVA 16\%, IVA 8\%, Exento, Cero
+  \item Ir a Contabilidad $\rightarrow$ Configuración $\rightarrow$ Diarios: confirmar existencia de Ventas, Compras, Banco, Caja
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_base}}
+
+\begin{checklist}
+  \item El módulo instala sin errores en el log del servidor
+  \item En Ajustes $\rightarrow$ Técnico $\rightarrow$ Vistas: existen vistas con módulo \texttt{l10n\_ve\_base}
+  \item En Ajustes aparece alguna sección con configuraciones de Venezuela
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_rate}}
+
+\begin{checklist}
+  \item Ir a Contabilidad $\rightarrow$ Configuración $\rightarrow$ Divisas: USD aparece activa
+  \item Crear tasa de cambio manual (ej. 1 USD = 36 VES) y verificar que se guarda correctamente
+  \item En Ajustes $\rightarrow$ Contabilidad: aparece sección de tipo de cambio Venezuela
+  \item VES (Bolívar Soberano) disponible como divisa activa
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_location}}
+
+\begin{checklist}
+  \item Ir a Contactos $\rightarrow$ Configuración $\rightarrow$ Municipios: listar los 335 municipios
+  \item Ir a Contactos $\rightarrow$ Configuración $\rightarrow$ Parroquias: listar parroquias
+  \item Ir a Contactos $\rightarrow$ Configuración $\rightarrow$ Ciudades: listar ciudades venezolanas
+  \item Crear un contacto y verificar que los campos Municipio y Parroquia están disponibles
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_contact}}
+
+\begin{checklist}
+  \item Crear contacto Empresa: aparece campo \textbf{Prefijo RIF} (V, E, J, G, P)
+  \item Ingresar RIF correcto (J-12345678-9): el sistema acepta el valor
+  \item Ingresar RIF incorrecto o sin dígito verificador: muestra error de validación
+  \item Verificar campo \textbf{Tipo de Contribuyente} disponible en el contacto
+  \item En Ajustes $\rightarrow$ Empresa: configurar RIF de la empresa con prefijo
+  \item Crear contacto natural (prefijo V) y uno jurídico (prefijo J): ambos se guardan correctamente
+\end{checklist}
+
+\subsection{\modulo{od\_journal\_sequence}}
+
+\begin{checklist}
+  \item Ir a Contabilidad $\rightarrow$ Configuración $\rightarrow$ Diarios $\rightarrow$ Ventas: ver configuración de Secuencia independiente
+  \item Crear factura y confirmar: número sigue la secuencia configurada en el diario
+  \item Crear factura en otro diario diferente: numeración es independiente del primero
+  \item Cambiar prefijo de secuencia y confirmar nueva factura: usa el nuevo prefijo
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_accountant}}
+
+\begin{checklist}
+  \item Ir a Contabilidad $\rightarrow$ Configuración $\rightarrow$ Unidad Tributaria: existe el modelo
+  \item Crear un valor de UT y guardar correctamente
+  \item Crear factura en USD: aparece campo \textbf{Tasa de Cambio} en el formulario
+  \item El campo Fecha de Factura (Display) muestra zona horaria Venezuela
+  \item Crear pago en USD: calcula equivalente en VES automáticamente
+  \item En Ajustes $\rightarrow$ Contabilidad: verificar configuraciones venezolanas disponibles
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_invoice}}
+
+\begin{checklist}
+  \item Crear factura de cliente y confirmar: aparece \textbf{Número de Control} correlativo
+  \item Crear segunda factura: número de control incrementa correctamente
+  \item Configurar prefijo diferente en el diario: nueva factura lo utiliza
+  \item Crear factura de proveedor: verificar campo \textbf{Fecha de Recepción} disponible
+  \item Factura de importación: verificar campo \textbf{Declaración Única de Aduanas}
+  \item Imprimir reporte \textbf{Formato Libre}: verificar todos los campos del SENIAT (sección 6.1)
+  \item Crear Nota de Débito: genera su propio número de control separado
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_tax\_payer}}
+
+\begin{checklist}
+  \item Abrir proveedor: verificar campos \emph{Retiene IVA}, \emph{Porcentaje IVA}, \emph{Retiene ISLR}, \emph{Retiene Municipal}
+  \item Marcar proveedor como Contribuyente Especial con retención IVA 75\%
+  \item Crear proveedor ordinario sin retenciones: verificar diferencia en flags respecto al especial
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_payment\_extension}}
+
+\textbf{Retención IVA:}
+\begin{checklist}
+  \item Configurar proveedor como Contribuyente Especial (75\%)
+  \item Crear factura con IVA y al momento de pagar crear la retención
+  \item Verificar cálculo: base IVA $\times$ 75\% = monto retenido
+  \item Imprimir ARCV de IVA: verificar campos del SENIAT (sección 6.2)
+  \item Confirmar retención y verificar asiento contable generado
+\end{checklist}
+
+\textbf{Retención ISLR:}
+\begin{checklist}
+  \item Ir a Contabilidad $\rightarrow$ Configuración $\rightarrow$ Conceptos de Retención ISLR: existen conceptos configurados
+  \item Crear retención ISLR sobre factura de servicio profesional
+  \item Verificar cálculo según alícuota del concepto asignado
+  \item Imprimir ARCV de ISLR y verificar formato correcto
+\end{checklist}
+
+\textbf{Retención Municipal:}
+\begin{checklist}
+  \item Ir a Contabilidad $\rightarrow$ Configuración $\rightarrow$ Actividades Económicas: existen actividades configuradas
+  \item Asignar actividad económica al proveedor
+  \item Crear retención municipal y verificar cálculo según alícuota
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_igtf}}
+
+\begin{checklist}
+  \item En diario Banco USD marcar \textbf{Aplica IGTF}
+  \item Configurar \textbf{Cuenta Puente IGTF} en Ajustes $\rightarrow$ Contabilidad
+  \item Crear factura USD y registrar pago: verificar cargo automático del 3\%
+  \item Revisar asiento contable del pago: tiene línea de IGTF separada
+  \item Crear anticipo de cliente en USD: marcarse como \texttt{is\_advance\_move}
+  \item En factura impresa: verificar que aparece línea de IGTF
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_filter\_partner}}
+
+\begin{checklist}
+  \item Al crear factura de cliente: campo Cliente solo muestra contactos marcados como clientes
+  \item Al crear factura de proveedor: campo Proveedor solo muestra contactos marcados como proveedores
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_stock}}
+
+\begin{checklist}
+  \item Los productos tienen campo \textbf{Precio en Moneda Extranjera}
+  \item Ingresar precio en USD: verificar equivalente en VES según tasa vigente
+  \item Inventario $\rightarrow$ Reportes $\rightarrow$ Valoración: muestra valores en VES
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_sale}}
+
+\begin{checklist}
+  \item Crear orden de venta: selector de cliente usa filtro venezolano
+  \item Agregar línea con producto en USD: muestra precio en USD y equivalente en VES
+  \item Confirmar orden y crear factura: hereda número de control y datos venezolanos
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_purchase}}
+
+\begin{checklist}
+  \item Crear orden de compra y confirmarla
+  \item Crear factura de proveedor desde la orden: verificar campo \textbf{Fecha de Recepción} disponible
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_stock\_purchase}}
+
+\begin{checklist}
+  \item Confirmar orden de compra: crea recibo en almacén automáticamente
+  \item Validar recibo: el movimiento usa campos venezolanos correctamente
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_stock\_account}}
+
+\begin{checklist}
+  \item Inventario $\rightarrow$ Configuración $\rightarrow$ Razones de Transferencia: existen razones precargadas
+  \item Crear transferencia, asignarle una razón y validarla: se genera Guía de Despacho
+  \item Abrir la guía: número secuencial, campos de transportista, origen y destino presentes
+  \item Imprimir la guía: verificar que cumple los campos de la sección 6.3
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_stock\_reports}}
+
+\begin{checklist}
+  \item Inventario $\rightarrow$ Reportes $\rightarrow$ Libro de Inventario
+  \item Seleccionar período y ejecutar el reporte: muestra movimientos con saldo por producto
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_pos}}
+
+\begin{checklist}
+  \item Configurar POS con tasa de cambio del día
+  \item Buscar cliente por RIF desde la interfaz del POS
+  \item Crear venta con pago en USD: verificar equivalente en VES calculado automáticamente
+  \item Cerrar sesión: resumen muestra totales por tipo de pago y moneda
+  \item Generar Reporte de Pagos de la sesión cerrada
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_pos\_igtf}}
+
+\begin{checklist}
+  \item Crear venta en POS con pago en USD: aparece IGTF (3\%) automático en el ticket
+  \item Total cobrado incluye el IGTF correctamente calculado
+  \item En la orden cerrada, IGTF registrado como línea separada en el asiento
+\end{checklist}
+
+\subsection{\modulo{account\_fiscal\_year\_closing}}
+
+\begin{checklist}
+  \item Contabilidad $\rightarrow$ Contabilidad $\rightarrow$ Cierres de Año Fiscal: existen plantillas de cierre
+  \item Crear cierre para un período anterior y ejecutar el paso \textbf{Preparar}
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_account\_fiscalyear\_closing}}
+
+\begin{checklist}
+  \item Verificar campos venezolanos en el cierre: RIF empresa, tasa de cambio de cierre
+  \item Ejecutar cierre completo: preparar $\rightarrow$ confirmar $\rightarrow$ validar
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_fiscal\_lock\_days}}
+
+\begin{checklist}
+  \item Configurar fecha de bloqueo en Ajustes $\rightarrow$ Contabilidad
+  \item Intentar crear factura con fecha anterior al bloqueo: muestra error
+  \item Cambiar fecha de bloqueo mediante wizard: requiere ingreso de justificación
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_ref\_bank}}
+
+\begin{checklist}
+  \item Configurar diario bancario con prefijo y longitud de referencia esperada
+  \item Registrar pago con referencia válida (prefijo y longitud correctos): el sistema acepta
+  \item Registrar pago con referencia de longitud incorrecta: el sistema muestra error de validación
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_suggested\_amount}}
+
+\begin{checklist}
+  \item Crear factura en USD con saldo pendiente
+  \item Ir a Registrar Pago: ver campo \textbf{Monto Sugerido en VES} calculado
+  \item Cambiar la tasa de cambio: verificar que el monto sugerido se recalcula automáticamente
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_auditlog}}
+
+\begin{checklist}
+  \item Crear y confirmar una factura, luego modificar un campo editable
+  \item El chatter muestra tracking del cambio con valor anterior y valor nuevo
+  \item Cambios en \texttt{account.payment} también quedan registrados en el chatter
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_donation}}
+
+\begin{checklist}
+  \item Verificar configuración de cuenta contable de donación en Ajustes
+  \item Crear orden de venta como Donación: solo acepta clientes empresa (no personas naturales)
+  \item Confirmar orden, validar despacho y crear factura de donación
+  \item Imprimir Certificado de Donación: verificar que contiene todos los campos requeridos
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_iot\_mf} (requiere hardware TFHKA)}
+
+\begin{checklist}
+  \item Configurar IP y token de la máquina fiscal en Ajustes
+  \item Verificar que aparece registrada como dispositivo IoT
+  \item Marcar el diario de ventas como \emph{Con Máquina Fiscal}
+  \item Mapear impuestos IVA de Odoo a los códigos de la máquina fiscal
+  \item Confirmar una factura: recibe número de secuencia fiscal de la máquina
+  \item Ejecutar \textbf{Reporte Z} al final del día desde Odoo
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_invoice\_digital} (requiere \modulo{l10n\_ve\_iot\_mf})}
+
+\begin{checklist}
+  \item Activar \textbf{Retenciones Automáticas} en Ajustes
+  \item Confirmar factura para proveedor con retención: retenciones generadas automáticamente al confirmar
+  \item Si el almacén no tiene máquina fiscal asignada: aparece alerta en el sistema
+\end{checklist}
+
+\subsection{\modulo{l10n\_ve\_pos\_mf} (requiere \modulo{l10n\_ve\_iot\_mf} + \modulo{l10n\_ve\_pos})}
+
+\begin{checklist}
+  \item Asignar máquina fiscal al POS en la configuración
+  \item Realizar venta en POS: al cerrar la orden envía datos a la máquina y recibe número fiscal
+  \item Verificar que el número de secuencia fiscal queda registrado en la orden
+  \item Reportes $\rightarrow$ Libro de Ventas Fiscal: muestra ventas con números fiscales asignados
+\end{checklist}
+
+% ============================================================
+%  FIN DEL DOCUMENTO
+% ============================================================
+\end{document}
