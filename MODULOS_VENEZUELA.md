@@ -1,133 +1,397 @@
-# Módulos Odoo Venezuela — Mapeo Completo
+# Guía de Implementación Odoo 19 — Venezuela
 
 **Repositorio:** odoo-venezuela (rama 19.0)  
-**Fecha de análisis:** 2026-06-01  
-**Total de módulos:** 33
+**Módulos locales:** 33  
+**Mantenedor:** Binaural Dev  
+**Última revisión:** 2026-06-02
+
+> Este documento es la guía operativa de implementación para empresas venezolanas.
+> Se usa en cada proyecto: desde el levantamiento hasta la homologación con el SENIAT.
 
 ---
 
 ## Tabla de Contenido
 
-1. [Ecosistema General](#1-ecosistema-general)
-2. [Orden de Instalación Recomendado](#2-orden-de-instalación-recomendado)
-3. [Módulos por Capa](#3-módulos-por-capa)
-   - [Capa 0 — Infraestructura Base](#capa-0--infraestructura-base)
-   - [Capa 1 — Datos Geográficos y Contactos](#capa-1--datos-geográficos-y-contactos)
-   - [Capa 2 — Contabilidad Core](#capa-2--contabilidad-core)
-   - [Capa 3 — Facturación y Secuencias](#capa-3--facturación-y-secuencias)
-   - [Capa 4 — Retenciones e Impuestos Especiales](#capa-4--retenciones-e-impuestos-especiales)
-   - [Capa 5 — Inventario y Logística](#capa-5--inventario-y-logística)
-   - [Capa 6 — Ventas, Compras y POS](#capa-6--ventas-compras-y-pos)
-   - [Capa 7 — Máquinas Fiscales e IoT](#capa-7--máquinas-fiscales-e-iot)
-   - [Capa 8 — Módulos Opcionales / Extensiones](#capa-8--módulos-opcionales--extensiones)
-4. [Fichas Detalladas de Cada Módulo](#4-fichas-detalladas-de-cada-módulo)
-5. [Árbol de Dependencias](#5-árbol-de-dependencias)
-6. [Qué cubre y qué no cubre esta localización](#6-qué-cubre-y-qué-no-cubre-esta-localización)
-7. [Checklist de Pruebas por Módulo](#7-checklist-de-pruebas-por-módulo)
+1. [Levantamiento Previo](#1-levantamiento-previo)
+2. [Perfiles de Empresa](#2-perfiles-de-empresa)
+3. [Apps Odoo Nativas Requeridas](#3-apps-odoo-nativas-requeridas)
+4. [Instalación por Perfil](#4-instalación-por-perfil)
+5. [Configuración Post-Instalación](#5-configuración-post-instalación)
+6. [Checklist de Homologación SENIAT](#6-checklist-de-homologación-seniat)
+7. [Go-Live Checklist](#7-go-live-checklist)
+8. [Referencia de Módulos por Capa](#8-referencia-de-módulos-por-capa)
+9. [Árbol de Dependencias](#9-árbol-de-dependencias)
+10. [Cobertura de la Localización](#10-cobertura-de-la-localización)
+11. [Checklist de Pruebas por Módulo](#11-checklist-de-pruebas-por-módulo)
 
 ---
 
-## 1. Ecosistema General
+## 1. Levantamiento Previo
 
-Esta localización es una implementación **completa y profunda** de Odoo para Venezuela. No es un simple plan de cuentas: abarca desde la validación de RIF hasta la integración con máquinas fiscales TFHKA (The Factory HKA), pasando por retenciones de ISLR/IVA, IGTF, guías de remisión y cierre fiscal.
+Recopilar esta información del cliente **antes** de iniciar la instalación. Determina el perfil y los módulos a instalar.
 
-### Responsables técnicos
-Los módulos con prefijo `l10n_ve_*` son desarrollados por **Binaural Dev**, mientras que `od_journal_sequence` es un módulo de terceros incorporado al stack.
+### 1.1 Datos Fiscales de la Empresa
 
-### Arquitectura en capas
+| Dato | Valor | Impacto |
+|------|-------|---------|
+| RIF completo (ej. J-12345678-9) | | Configuración empresa, aparece en todos los documentos |
+| Razón social exacta (igual al RIF) | | Facturas, retenciones, guías |
+| Dirección fiscal (igual al SENIAT) | | Facturas, comprobantes |
+| Tipo de contribuyente | Ordinario / Especial / Exento | Define si retiene IVA/ISLR |
+| ¿Es agente de retención de IVA? | Sí / No | `l10n_ve_payment_extension` obligatorio |
+| ¿Es agente de retención de ISLR? | Sí / No | `l10n_ve_payment_extension` obligatorio |
+| ¿Retiene impuesto municipal? | Sí / No | `l10n_ve_payment_extension` + actividad económica |
+| Resolución de contribuyente especial (número) | | Aparece en comprobantes de retención |
+| Actividad económica principal (código y descripción) | | Retención municipal |
+| Valor actual de la Unidad Tributaria (UT) | | `l10n_ve_accountant` — cálculo ISLR |
+
+### 1.2 Operaciones en Moneda Extranjera
+
+| Pregunta | Sí / No | Impacto |
+|----------|---------|---------|
+| ¿Factura en USD u otra divisa? | | `l10n_ve_rate` + `l10n_ve_igtf` obligatorios |
+| ¿Recibe pagos en divisas? | | `l10n_ve_igtf` — cargo del 3% IGTF |
+| ¿Realiza anticipos en divisas? | | Configuración cuentas puente IGTF |
+| ¿Necesita sincronización automática BCV? | | `l10n_ve_currency_rate_live` (opcional) |
+| Tasa de cambio vigente al inicio | | Configuración inicial en Odoo |
+
+### 1.3 Emisión de Facturas
+
+| Pregunta | Opciones | Módulo resultante |
+|----------|----------|-------------------|
+| ¿Cómo emite facturas actualmente? | Formato libre / Máquina fiscal / Factura digital | Define arquitectura |
+| ¿Tiene máquina fiscal TFHKA? | Sí / No | `l10n_ve_iot_mf` si aplica |
+| ¿Necesita facturación digital con retenciones automáticas? | Sí / No | `l10n_ve_invoice_digital` |
+| Prefijo del número de control (ej. `00`) | | Configuración diario de ventas |
+| ¿Maneja notas de débito? | Sí / No | Incluido en `l10n_ve_invoice` |
+
+### 1.4 Operaciones Comerciales
+
+| Pregunta | Sí / No | Módulos adicionales |
+|----------|---------|---------------------|
+| ¿Maneja inventario físico? | | `l10n_ve_stock` + `l10n_ve_stock_account` |
+| ¿Emite guías de despacho? | | `l10n_ve_stock_account` obligatorio |
+| ¿Tiene punto de venta (caja)? | | `l10n_ve_pos` + `l10n_ve_pos_igtf` |
+| ¿El POS usa máquina fiscal? | | `l10n_ve_pos_mf` |
+| ¿Realiza donaciones registrables? | | `l10n_ve_donation` |
+| ¿Necesita programa de fidelización? | | `l10n_ve_invoice_loyalty` |
+| ¿Maneja listas de precio en divisas? | | `l10n_ve_price_list` |
+
+### 1.5 Requerimientos Adicionales
+
+| Pregunta | Sí / No | Módulo |
+|----------|---------|--------|
+| ¿Requiere bloqueo de períodos fiscales? | | `l10n_ve_fiscal_lock_days` |
+| ¿Requiere auditoría de cambios contables? | | `l10n_ve_auditlog` |
+| ¿Necesita cierre formal de año fiscal? | | `l10n_ve_account_fiscalyear_closing` |
+| ¿Valida referencias bancarias en pagos? | | `l10n_ve_ref_bank` |
+| ¿Usa Odoo Studio para customizaciones? | | `l10n_ve_studio` obligatorio si responde sí |
+
+---
+
+## 2. Perfiles de Empresa
+
+Con base en el levantamiento, clasificar al cliente en uno de estos perfiles. Los perfiles son acumulativos.
+
+### Perfil A — Servicios, Contribuyente Ordinario
+**Caso típico:** Firma de consultoría, agencia, despacho jurídico, sin inventario, sin retenciones.
+
+Factura en bolívares o divisas, paga IVA pero no retiene, puede tener operaciones en USD con IGTF.
+
+### Perfil B — Servicios o Comercio, Contribuyente Especial
+**Caso típico:** Empresa mediana/grande designada por el SENIAT como agente de retención.
+
+Todo lo del Perfil A, más obligación de retener IVA (75% o 100%), ISLR y/o Municipal sobre pagos a proveedores.
+
+### Perfil C — Comercio con Inventario
+**Caso típico:** Distribuidora, importadora, empresa manufacturera.
+
+Todo lo del Perfil B, más control de inventario, guías de despacho legalmente requeridas para movilización de mercancía.
+
+### Perfil D — Con Punto de Venta
+**Caso típico:** Retail, restaurante, tienda.
+
+Todo lo del Perfil C (o B si no hay inventario propio), más POS con manejo de múltiples métodos de pago en divisas y VES, IGTF en caja.
+
+### Perfil E — Con Máquina Fiscal TFHKA
+**Caso típico:** Empresa obligada por el SENIAT a usar máquina fiscal.
+
+Cualquier perfil anterior, más integración IoT con máquina fiscal TFHKA para emisión de facturas y reportes Z.
+
+---
+
+## 3. Apps Odoo Nativas Requeridas
+
+Instalar estas apps de Odoo **antes** de los módulos venezolanos. Sin ellas las dependencias no resuelven.
+
+| App (nombre en UI) | Módulo técnico | Obligatoria para |
+|--------------------|---------------|-----------------|
+| Contabilidad | `account` + `account_accountant` | Todos los perfiles |
+| Contactos | `contacts` | Todos los perfiles |
+| Ventas | `sale` | Perfiles C, D, E |
+| Compras | `purchase` | Perfiles C, D, E |
+| Inventario | `stock` | Perfiles C, D, E |
+| Punto de Venta | `point_of_sale` | Perfiles D, E |
+| IoT | `iot` | Solo Perfil E |
+
+> Al instalar **Contabilidad** en Odoo 19 con país Venezuela, el plan de cuentas oficial (`l10n_ve`) se carga automáticamente. No se requiere módulo adicional de plan de cuentas.
+
+---
+
+## 4. Instalación por Perfil
+
+### Perfil A — Servicios, Contribuyente Ordinario
 
 ```
-[Odoo Core]
-    ↓
-[l10n_ve_base]  ←  infraestructura técnica
-    ↓
-[l10n_ve_rate]  ←  tipos de cambio
-    ↓
-[l10n_ve_location] + [l10n_ve_contact]  ←  geografía + RIF
-    ↓
-[l10n_ve_accountant]  ←  contabilidad core  (plan de cuentas: oficial Odoo 19)
-    ↓
-[l10n_ve_invoice]  ←  facturación SENIAT
-    ↓
-[l10n_ve_payment_extension]  ←  retenciones
-[l10n_ve_igtf]               ←  IGTF
-    ↓
-[l10n_ve_stock] → [l10n_ve_stock_account]  ←  inventario
-    ↓
-[l10n_ve_sale] + [l10n_ve_purchase]  ←  ventas / compras
-    ↓
-[l10n_ve_pos] + extensiones  ←  punto de venta
-[l10n_ve_iot_mf]             ←  máquinas fiscales
+l10n_ve_base
+l10n_ve_rate
+l10n_ve_location
+l10n_ve_contact
+od_journal_sequence
+l10n_ve_accountant
+l10n_ve_invoice
+l10n_ve_tax_payer
+l10n_ve_igtf              ← solo si opera en divisas
+l10n_ve_filter_partner    ← recomendado siempre
+l10n_ve_suggested_amount  ← recomendado si opera en divisas
 ```
 
----
+### Perfil B — Contribuyente Especial (acumulativo sobre A)
 
-## 2. Orden de Instalación Recomendado
+```
++ l10n_ve_payment_extension   ← retenciones IVA / ISLR / Municipal
++ l10n_ve_ref_bank            ← si valida referencias bancarias
++ l10n_ve_auditlog            ← recomendado para trazabilidad SENIAT
++ l10n_ve_fiscal_lock_days    ← recomendado para control de períodos
+```
 
-El orden está determinado por el grafo de dependencias de los `__manifest__.py`. Se listan en grupos que pueden instalarse en el orden dado.
+### Perfil C — Con Inventario (acumulativo sobre B)
 
-### Instalación mínima (solo contabilidad básica)
+```
++ l10n_ve_stock
++ l10n_ve_sale
++ l10n_ve_purchase
++ l10n_ve_stock_purchase
++ l10n_ve_donation          ← solo si realiza donaciones
++ l10n_ve_stock_account     ← guías de despacho (obligatorio si mueve mercancía)
++ l10n_ve_stock_reports     ← libro de inventario para cierre fiscal
++ l10n_ve_price_list        ← si usa listas de precio en divisas
+```
 
-| # | Módulo | Razón |
-|---|--------|-------|
-| 1 | `l10n_ve_base` | Base técnica de toda la localización |
-| 2 | `l10n_ve_rate` | Tipos de cambio (requerido por casi todo) |
-| 3 | `l10n_ve_location` | Datos geográficos de Venezuela |
-| 4 | `l10n_ve_contact` | RIF, tipos de contribuyente, municipio |
-| 5 | `od_journal_sequence` | Numeración por diario (requerido por facturación) |
-| 6 | `l10n_ve_accountant` | Motor contable venezolano + Unidad Tributaria |
-| 7 | `l10n_ve_invoice` | Facturación, número de control, SENIAT |
-| 8 | `l10n_ve_tax_payer` | Clasificación de contribuyentes |
-| 9 | `l10n_ve_payment_extension` | Retenciones IVA / ISLR / Municipal |
-| 10 | `l10n_ve_igtf` | IGTF (3% grandes transacciones financieras) |
+### Perfil D — Con POS (acumulativo sobre B o C)
 
-### Instalación con inventario
+```
++ l10n_ve_pos
++ l10n_ve_pos_igtf          ← si el POS acepta pagos en divisas
+```
 
-Continuar desde la mínima y agregar:
+### Perfil E — Con Máquina Fiscal TFHKA (acumulativo sobre D)
 
-| # | Módulo | Razón |
-|---|--------|-------|
-| 12 | `l10n_ve_filter_partner` | Mixin técnico para filtros de clientes |
-| 13 | `l10n_ve_stock` | Inventario venezolano |
-| 14 | `l10n_ve_sale` | Ventas venezolanas |
-| 15 | `l10n_ve_purchase` | Compras venezolanas |
-| 16 | `l10n_ve_stock_purchase` | Integración compras ↔ inventario |
-| 17 | `l10n_ve_donation` | Donaciones (si aplica) |
-| 18 | `l10n_ve_stock_account` | Integración inventario ↔ contabilidad, guías de remisión |
+```
++ l10n_ve_iot_mf
++ l10n_ve_pos_mf            ← si la máquina está en el POS
++ l10n_ve_invoice_digital   ← si emite factura digital con retenciones automáticas
+```
 
-### Instalación completa (con POS y reportes)
+### Módulos opcionales (cualquier perfil)
 
-Continuar desde inventario y agregar:
-
-| # | Módulo | Razón |
-|---|--------|-------|
-| 19 | `l10n_ve_pos` | Punto de venta |
-| 20 | `l10n_ve_pos_igtf` | IGTF en POS |
-| 21 | `l10n_ve_stock_reports` | Libro de inventario |
-| 22 | `account_fiscal_year_closing` | Base genérica de cierre fiscal |
-| 23 | `l10n_ve_account_fiscalyear_closing` | Cierre fiscal venezolano |
-| 24 | `l10n_ve_fiscal_lock_days` | Bloqueo de períodos |
-| 25 | `l10n_ve_ref_bank` | Validación de referencias bancarias |
-| 26 | `l10n_ve_suggested_amount` | Monto sugerido en pagos multimoneda |
-| 27 | `l10n_ve_auditlog` | Auditoría de cambios |
-| 28 | `l10n_ve_price_list` | Listas de precio multimoneda |
-
-### Módulos opcionales (solo si se necesita)
-
-| Módulo | Cuándo instalar |
-|--------|----------------|
-| `l10n_ve_iot_mf` | Si se tiene máquina fiscal TFHKA |
-| `l10n_ve_invoice_digital` | Si se emite factura digital con retenciones automáticas |
-| `l10n_ve_pos_mf` | Si el POS está conectado a máquina fiscal |
-| `l10n_ve_currency_rate_live` | Si se quiere sincronización automática BCV |
-| `l10n_ve_invoice_loyalty` | Si se tiene programa de fidelización |
-| `l10n_ve_studio` | Si se usa Odoo Studio (limita customizaciones) |
-
-> **Nota sobre plan de cuentas:** En Odoo 19, el plan de cuentas oficial para Venezuela viene incluido en el core de Odoo (`l10n_ve` oficial). No se requiere instalar ningún módulo adicional de plan de cuentas — se selecciona durante la configuración inicial de la empresa.
+| Módulo | Cuándo agregar |
+|--------|---------------|
+| `l10n_ve_currency_rate_live` | Si se quiere actualización automática de tasa BCV |
+| `account_fiscal_year_closing` + `l10n_ve_account_fiscalyear_closing` | Al final del primer año fiscal |
+| `l10n_ve_invoice_loyalty` | Si tienen programa de puntos/fidelización |
+| `l10n_ve_studio` | Si el cliente va a usar Odoo Studio |
 
 ---
 
-## 3. Módulos por Capa
+## 5. Configuración Post-Instalación
+
+Pasos a ejecutar **en orden** tras instalar los módulos. Esta es la fase de parametrización.
+
+### 5.1 Empresa
+
+- [ ] **Ajustes → Empresas → [empresa]**
+  - Razón social exacta (igual al RIF-J)
+  - RIF con prefijo: `J-12345678-9`
+  - Dirección fiscal completa (estado, municipio, parroquia)
+  - Teléfono, email, logo
+  - Marcar **Contribuyente Especial** si aplica
+  - Número de resolución de contribuyente especial
+- [ ] Verificar que el país es **Venezuela** y el plan de cuentas `l10n_ve` está aplicado
+
+### 5.2 Tipos de Cambio
+
+- [ ] **Contabilidad → Configuración → Divisas** — activar USD
+- [ ] Crear la tasa de cambio inicial con el valor BCV del día
+- [ ] Si se usa `l10n_ve_currency_rate_live`: configurar el proveedor BCV y activar el cron
+
+### 5.3 Unidad Tributaria
+
+- [ ] **Contabilidad → Configuración → Unidad Tributaria**
+- [ ] Crear registro con el valor vigente publicado por el SENIAT
+- [ ] Este valor afecta los cálculos de retención ISLR con acumulados
+
+### 5.4 Diarios Contables
+
+Para cada diario (Ventas, Compras, Banco USD, Banco VES, Caja):
+- [ ] Configurar **secuencia** con prefijo apropiado (ej. `FAC`, `COMP`, `BNK`)
+- [ ] Diario de Ventas: configurar **prefijo de número de control** (ej. `00`)
+- [ ] Diarios de banco/caja en USD: marcar **Aplica IGTF** si el cliente lo requiere
+- [ ] Diarios bancarios: configurar validación de referencia si se instaló `l10n_ve_ref_bank`
+
+### 5.5 Impuestos
+
+- [ ] Verificar que existen: IVA 16%, IVA 8%, Exento (0%), IVA Importación
+- [ ] Configurar las **cuentas contables** de cada impuesto (IVA por pagar, IVA soportado)
+- [ ] Si hay IGTF: configurar la **cuenta puente IGTF** en Ajustes → Contabilidad
+
+### 5.6 Retenciones (Perfiles B, C, D, E)
+
+- [ ] **Contabilidad → Configuración → Tipos de Retención** — verificar IVA, ISLR, Municipal
+- [ ] Configurar los **conceptos de retención ISLR** (honorarios, servicios técnicos, etc.) con alícuotas
+- [ ] Si retiene Municipal: cargar **Actividades Económicas** y sus alícuotas
+- [ ] Configurar la **firma del representante legal** para los comprobantes ARCV
+- [ ] Secuencias de numeración para cada tipo de retención
+
+### 5.7 Contactos / Proveedores
+
+- [ ] Cargar los proveedores principales con RIF completo y prefijo
+- [ ] Marcar correctamente: **Contribuyente Especial**, **Retiene IVA**, **Retiene ISLR**, **Retiene Municipal**
+- [ ] Asignar actividad económica a los proveedores que aplique retención municipal
+
+### 5.8 Inventario (Perfiles C, D, E)
+
+- [ ] Configurar almacenes con nombres y ubicaciones correctas
+- [ ] Cargar **Razones de Transferencia** (Venta, Traslado, Donación, Muestra, etc.)
+- [ ] Configurar secuencia de **Guías de Despacho**
+- [ ] Asignar cuentas contables a categorías de productos
+
+### 5.9 Punto de Venta (Perfiles D, E)
+
+- [ ] Configurar POS: almacén, tasa de cambio por defecto, métodos de pago
+- [ ] Métodos de pago: crear uno en VES y uno en USD (si aplica IGTF, marcarlo)
+- [ ] Configurar impresora de tickets si aplica
+
+### 5.10 Máquina Fiscal (Perfil E)
+
+- [ ] **IoT → Dispositivos** — registrar máquina fiscal con IP y token TFHKA
+- [ ] Mapear impuestos IVA a códigos de la máquina fiscal
+- [ ] Marcar el diario de ventas como **Con Máquina Fiscal**
+- [ ] Hacer prueba de conexión desde Odoo
+
+---
+
+## 6. Checklist de Homologación SENIAT
+
+El SENIAT no tiene un proceso formal de "homologación de software" para todos los casos, pero sí exige que los documentos emitidos cumplan con los requisitos del Artículo 57 de la Ley del IVA y las providencias administrativas vigentes. Este checklist valida que Odoo cumple esos requisitos.
+
+### 6.1 Requisitos de la Factura (Art. 57 Ley IVA + Providencia 0071)
+
+Imprimir una factura de prueba y verificar que contiene:
+
+- [ ] Denominación **"FACTURA"** claramente visible
+- [ ] **Número de Control** (correlativo, ej. `No. 00-00000001`)
+- [ ] **Número de factura** (secuencia del diario)
+- [ ] **Fecha** de emisión
+- [ ] **Razón social** del emisor exactamente igual al RIF-SENIAT
+- [ ] **RIF del emisor** con prefijo (J, V, E, G)
+- [ ] **Dirección fiscal** del emisor
+- [ ] **Teléfono** del emisor
+- [ ] **Nombre o razón social** del cliente
+- [ ] **RIF del cliente**
+- [ ] **Dirección** del cliente
+- [ ] Descripción del bien o servicio
+- [ ] Cantidad, precio unitario, precio total por línea
+- [ ] **Base imponible** (monto gravado)
+- [ ] **Alícuota del IVA** aplicada (16% o 8%)
+- [ ] **Monto del IVA**
+- [ ] **Total** de la factura
+- [ ] Si opera en divisas: **tasa de cambio** y equivalente en VES
+- [ ] Si aplica IGTF: línea de **IGTF 3%** separada
+
+### 6.2 Comprobantes de Retención (Contribuyentes Especiales)
+
+Generar un comprobante de retención de IVA y verificar:
+
+- [ ] Denominación **"COMPROBANTE DE RETENCIÓN"**
+- [ ] **Número** del comprobante (secuencia propia)
+- [ ] **Fecha** de emisión
+- [ ] Datos del **agente de retención** (razón social, RIF, dirección, resolución SENIAT)
+- [ ] Datos del **proveedor retenido** (razón social, RIF)
+- [ ] **Número de factura** retenida y fecha
+- [ ] **Monto total** de la factura
+- [ ] **Base imponible** retenida
+- [ ] **Alícuota de retención** (75% del IVA para contribuyentes especiales)
+- [ ] **Monto retenido**
+- [ ] Período fiscal al que corresponde
+- [ ] **Firma** del representante legal o persona autorizada (configurable en el módulo)
+- [ ] Lo mismo para retención de **ISLR** si aplica
+
+### 6.3 Guía de Despacho (si mueve mercancía)
+
+- [ ] Denominación **"GUÍA DE DESPACHO"**
+- [ ] **Número** correlativo
+- [ ] Fecha de emisión
+- [ ] Datos del **remitente** y **destinatario** con RIF
+- [ ] Descripción de los bienes, cantidad y unidad
+- [ ] **Razón de la transferencia** (venta, traslado, etc.)
+- [ ] Datos del **transportista**
+- [ ] Referencia a la **factura** o **orden** que la origina
+
+### 6.4 Validación de RIF
+
+- [ ] Todo cliente y proveedor tiene RIF cargado con prefijo correcto
+- [ ] El sistema rechaza guardar un partner sin RIF si se configura como obligatorio
+- [ ] Las facturas muestran el RIF del cliente correctamente
+
+### 6.5 Control de Numeración
+
+- [ ] Los números de control son **correlativos sin saltos** por diario
+- [ ] Las notas de débito tienen su **propio número de control** separado de las facturas
+- [ ] Las notas de crédito tienen su **propio número de control**
+- [ ] Cada diario tiene su secuencia independiente (`od_journal_sequence`)
+
+---
+
+## 7. Go-Live Checklist
+
+Verificar antes de que el cliente empiece a operar en producción.
+
+### Datos maestros
+- [ ] Empresa configurada con todos los datos fiscales
+- [ ] Tasa de cambio del día cargada
+- [ ] Valor de la UT actualizado
+- [ ] Todos los proveedores habituales cargados con RIF y configuración de retenciones
+- [ ] Productos y servicios cargados con impuestos correctos
+- [ ] Cuentas bancarias de la empresa configuradas
+
+### Secuencias
+- [ ] Número de control de ventas inicia desde el número correcto (continuación del sistema anterior o desde 1)
+- [ ] Secuencias de retenciones IVA / ISLR / Municipal inician correctamente
+- [ ] Secuencias de guías de despacho (si aplica)
+
+### Accesos y permisos
+- [ ] Usuarios configurados con roles apropiados
+- [ ] El contador tiene acceso a retenciones y cierre de períodos
+- [ ] El almacenista tiene acceso a guías de despacho pero no a contabilidad (si aplica)
+
+### Prueba final
+- [ ] Crear una factura de venta completa → confirmar → imprimir → verificar formato
+- [ ] Crear un pago de proveedor con retención (si contribuyente especial) → generar ARCV → imprimir
+- [ ] Crear un pago en USD → verificar cargo de IGTF (si aplica)
+- [ ] Hacer una venta en POS con pago mixto VES/USD (si aplica)
+- [ ] Validar que los asientos contables generados son correctos
+
+### Bloqueo de períodos
+- [ ] Configurar `l10n_ve_fiscal_lock_days` para bloquear períodos anteriores al inicio de operaciones
+
+---
+
+## 8. Referencia de Módulos por Capa
+
+La numeración de capas refleja el orden estricto de instalación. Un módulo no puede instalarse antes que todos los de capas anteriores.
+
+---
 
 ### Capa 0 — Infraestructura Base
 
@@ -193,12 +457,16 @@ Incluye reportes:
 - Reporte de todos los pagos
 - Plantillas de reporte contable
 
+**Dependencias:** `base`, `web`, `account`, `account_reports`, `purchase`, `sale`, `l10n_ve_base`, `l10n_ve_rate`, `l10n_ve_contact`, `account_invoice_pricelist`, `account_invoice_pricelist_sale`
+
 ---
 
 ### Capa 3 — Facturación y Secuencias
 
 #### `od_journal_sequence`
 Módulo de terceros que habilita **numeración independiente por diario**. En Odoo estándar todos los asientos de un tipo comparten secuencia; este módulo crea una secuencia por diario. Requerido por `l10n_ve_invoice` para el control de correlativo. Extiende `account.journal` y `account.move`.
+
+**Dependencias:** `account`
 
 #### `l10n_ve_invoice`
 Módulo de facturación venezolana. Implementa:
@@ -214,6 +482,8 @@ Reportes:
 - **Factura en formato libre** (formato requerido por SENIAT para impresoras no fiscales)
 - Acción de reporte sobre `ir.actions.report`
 
+**Dependencias:** `l10n_ve_rate`, `l10n_ve_base`, `l10n_ve_accountant`, `l10n_ve_contact`, `od_journal_sequence`, `account_debit_note`
+
 ---
 
 ### Capa 4 — Retenciones e Impuestos Especiales
@@ -224,7 +494,10 @@ Define la clasificación fiscal del `res.partner`:
 - Retiene IVA: sí/no (y porcentaje)
 - Retiene ISLR: sí/no
 - Retiene Municipal: sí/no
+
 Estos flags determinan qué retenciones aplican automáticamente en `l10n_ve_payment_extension`.
+
+**Dependencias:** `base`, `l10n_ve_rate`, `l10n_ve_accountant`
 
 #### `l10n_ve_payment_extension`
 El módulo de retenciones. Gestiona las tres retenciones obligatorias venezolanas:
@@ -251,6 +524,8 @@ Modelos clave:
 - `account.withholding.type` — tipos de retención configurables
 - `accumulated.fees` — acumulados de honorarios para UT
 
+**Dependencias:** `base`, `account`, `l10n_ve_rate`, `l10n_ve_accountant`, `l10n_ve_invoice`, `l10n_ve_location`, `l10n_ve_contact`, `l10n_ve_tax_payer`, `product`, `stock`
+
 #### `l10n_ve_igtf`
 Maneja el **IGTF** (Impuesto a las Grandes Transacciones Financieras, 3% sobre pagos en moneda extranjera):
 
@@ -262,9 +537,16 @@ Maneja el **IGTF** (Impuesto a las Grandes Transacciones Financieras, 3% sobre p
 - Soporte para IGTF en pagos anticipados (adelantos a proveedores y clientes)
 - Vista `invoice_free_form.xml` con línea de IGTF en factura
 
+**Dependencias:** `base`, `l10n_ve_accountant`, `l10n_ve_invoice`, `l10n_ve_tax_payer`, `l10n_ve_base`
+
 ---
 
 ### Capa 5 — Inventario y Logística
+
+#### `l10n_ve_filter_partner`
+Módulo técnico puro. Define `filter.partner.mixin` para reutilización: filtra `res.partner` mostrando solo clientes en contexto de ventas y solo proveedores en contexto de compras.
+
+**Dependencias:** `web`
 
 #### `l10n_ve_stock`
 Inventario base venezolano. Extiende:
@@ -275,32 +557,34 @@ Inventario base venezolano. Extiende:
 - `stock.picking`: campos venezolanos en transferencias
 - `stock.warehouse` / `stock.location`: configuraciones venezolanas
 
-Reportes:
-- Etiqueta de empaque
-- Valoración de inventario (con conversión a VES)
+Reportes: etiqueta de empaque, valoración de inventario (con conversión a VES)
+
+**Dependencias:** `stock`, `product`, `l10n_ve_rate`, `stock_delivery`
 
 #### `l10n_ve_stock_account`
-Integración inventario ↔ contabilidad. Es el módulo más complejo de la cadena de suministro:
+Integración inventario ↔ contabilidad. Módulo más complejo de la cadena de suministro:
 
-- **Guía de despacho** (`stock.picking.guide.dispatch`): documento físico requerido legalmente para movilización de mercancía en Venezuela, con número secuencial y campos de transportista
+- **Guía de despacho** (`stock.picking.guide.dispatch`): documento físico legalmente requerido para movilización de mercancía, con número secuencial y campos de transportista
 - **`transfer_reason`**: razón de la transferencia (venta, traslado, donación, muestra, etc.)
 - **`alert`**: alertas configurables para autoconsumo y diferencias de inventario
 - Integración con `account.move`: la guía de despacho genera/vincula la factura
-- Integración con donaciones
 - Cron jobs para reconciliación automática
 
+**Dependencias:** `l10n_ve_stock`, `l10n_ve_invoice`, `l10n_ve_accountant`, `l10n_ve_sale`, `l10n_ve_donation`, `sale_stock`, `web`
+
 #### `l10n_ve_stock_reports`
-Genera el **Libro de Inventario** (obligatorio para cierres fiscales en Venezuela). Wizard que exporta movimientos y existencias en un período dado, con formato apto para presentar ante el SENIAT.
+Genera el **Libro de Inventario** (obligatorio para cierres fiscales en Venezuela). Wizard que exporta movimientos y existencias en un período dado.
+
+**Dependencias:** `stock`, `account`, `sale_stock`
 
 #### `l10n_ve_stock_purchase`
-Glue module entre `purchase_stock` (Odoo) y el stack venezolano. Sin modelos propios, solo seguridades y configuraciones para que compras y almacén venezolano operen juntos correctamente.
+Glue module entre `purchase_stock` y el stack venezolano. Sin modelos propios.
+
+**Dependencias:** `purchase_stock`
 
 ---
 
 ### Capa 6 — Ventas, Compras y POS
-
-#### `l10n_ve_filter_partner`
-Módulo técnico puro. Define `filter.partner.mixin` para reutilización: filtra `res.partner` mostrando solo clientes en contexto de ventas y solo proveedores en contexto de compras. Evita código duplicado en `l10n_ve_sale`, `l10n_ve_invoice`, etc.
 
 #### `l10n_ve_sale`
 Ventas venezolanas:
@@ -310,11 +594,17 @@ Ventas venezolanas:
 - Reportes de ventas con campo `invoice_date_display`
 - Cron jobs para actualización de precios según tasa
 
+**Dependencias:** `base`, `l10n_ve_base`, `sale`, `l10n_ve_rate`, `l10n_ve_contact`, `l10n_ve_invoice`, `l10n_ve_filter_partner`, `l10n_ve_stock`
+
 #### `l10n_ve_purchase`
-Compras venezolanas. Módulo liviano (sin modelos propios actualmente), principalmente configuración de seguridades y vistas para el proceso de compras local.
+Compras venezolanas. Módulo liviano, principalmente configuración de seguridades y vistas.
+
+**Dependencias:** `purchase`, `account`
 
 #### `l10n_ve_price_list`
-Complemento de listas de precio. Extiende las vistas de `account.invoice`, `sale.order` y `product.template` para mostrar correctamente precios en moneda extranjera cuando hay lista de precios activa.
+Complemento de listas de precio. Extiende vistas para mostrar precios en moneda extranjera con lista de precios activa.
+
+**Dependencias:** `account`, `account_invoice_pricelist`, `l10n_ve_sale`
 
 #### `l10n_ve_pos`
 Punto de venta venezolano. Extiende prácticamente todo el stack POS:
@@ -323,11 +613,14 @@ Punto de venta venezolano. Extiende prácticamente todo el stack POS:
 - `pos.order` / `pos.order.line`: precios multimoneda, datos venezolanos
 - `pos.payment` / `pos.payment.method`: métodos de pago con equivalencia en moneda extranjera
 - `res.partner` en POS: búsqueda por RIF
-- `account.move`: factura generada desde POS con campos venezolanos
 - Reporte de pagos por sesión
 
+**Dependencias:** `base`, `point_of_sale`, `l10n_ve_rate`, `l10n_ve_contact`, `l10n_ve_stock`, `l10n_ve_location`, `l10n_ve_accountant`
+
 #### `l10n_ve_pos_igtf`
-Extensión del POS para IGTF. Sin modelos propios (toda la lógica está en assets JS/OWL). Extiende las vistas del POS para mostrar y calcular automáticamente el 3% de IGTF en pagos con divisas o transferencias.
+Extensión del POS para IGTF. Toda la lógica en assets JS/OWL. Calcula automáticamente el 3% de IGTF en pagos con divisas.
+
+**Dependencias:** `base`, `l10n_ve_pos`, `l10n_ve_igtf`
 
 ---
 
@@ -336,130 +629,85 @@ Extensión del POS para IGTF. Sin modelos propios (toda la lógica está en asse
 #### `l10n_ve_iot_mf`
 Integración con máquinas fiscales **TFHKA (The Factory HKA)** a través del sistema IoT de Odoo:
 - Define `iot.device` especializado para máquinas fiscales venezolanas
-- `iot.box`: caja IoT con configuración de puerto/IP
-- `account.move`: al confirmar una factura, envía los datos a la máquina fiscal y obtiene número de secuencia fiscal
+- Al confirmar una factura, envía los datos a la máquina fiscal y obtiene número de secuencia fiscal
 - `account.tax`: mapeo de tasas IVA a códigos de la máquina fiscal
 - `account.journal`: diario marcado como "con máquina fiscal"
-- `res.company` / `res.config.settings`: IP y token de la máquina fiscal
 - Soporte para **Reporte Z** (cierre de caja fiscal diario)
 
+**Dependencias:** `iot`, `account`, `web`, `l10n_ve_invoice`, `l10n_ve_tax_payer`, `l10n_ve_stock_account`
+
 #### `l10n_ve_pos_mf`
-Integración POS ↔ máquina fiscal. Combina `l10n_ve_pos` con `l10n_ve_iot_mf`:
-- `pos.order`: al cerrar una venta, envía ticket a máquina fiscal
+Integración POS ↔ máquina fiscal:
+- Al cerrar una venta, envía ticket a máquina fiscal
 - Captura número de secuencia fiscal en la orden POS
 - Genera **libro de ventas** con números fiscales
-- Vistas de configuración para enlazar POS con máquina fiscal específica
+
+**Dependencias:** `point_of_sale`, `l10n_ve_pos`, `pos_iot`, `l10n_ve_iot_mf`
 
 #### `l10n_ve_invoice_digital`
 Facturación digital con retenciones automáticas (integración TFHKA):
-- `account.retention` extendido para generación digital automática
-- `stock.picking` extendido para validar que el almacén tenga máquina fiscal asociada antes de facturar
-- `res.config.settings`: activar/desactivar retenciones automáticas
-- Alertas de retención en proceso de facturación
+- Retenciones generadas automáticamente al confirmar la factura
+- Validación de que el almacén tenga máquina fiscal asociada
+
+**Dependencias:** `base`, `account`, `l10n_ve_igtf`, `account_debit_note`, `l10n_ve_invoice`, `l10n_ve_iot_mf`, `l10n_ve_stock_account`, `l10n_ve_payment_extension`, `stock`
 
 ---
 
 ### Capa 8 — Módulos Opcionales / Extensiones
 
 #### `l10n_ve_fiscal_lock_days`
-Implementa bloqueo de períodos fiscales:
-- `res.company`: campos `fiscalyear_lock_date_invoice` y similares específicos para Venezuela
-- `account.move`: validación al crear/modificar asientos en período bloqueado
-- `account.change.lock.date`: wizard para cambiar la fecha de bloqueo con registro de auditoría
-- `res.config.settings`: UI de configuración de bloqueo
+Implementa bloqueo de períodos fiscales. Wizard para cambiar fecha de bloqueo con registro de auditoría.
+
+**Dependencias:** `base`, `account_accountant`, `l10n_ve_accountant`
 
 #### `account_fiscal_year_closing`
-Módulo base genérico (OCA) para cierre de año fiscal:
-- `account.fiscalyear.closing`: encabezado del proceso de cierre
-- `account.fiscalyear.closing.template`: plantillas de asientos de cierre (apertura de balance, traslado de resultados, etc.)
-- Wizard paso a paso: preparar → revisar → confirmar → validar
+Módulo base genérico (OCA) para cierre de año fiscal. Wizard paso a paso con plantillas de asientos.
+
+**Dependencias:** `account`
 
 #### `l10n_ve_account_fiscalyear_closing`
-Especialización venezolana del cierre fiscal:
-- Extiende los modelos OCA con campos venezolanos (tipo de cambio, RIF de empresa)
-- Templates de cierre precargados según regulaciones venezolanas
-- Integración con `l10n_ve_rate` para conversión de saldos
+Especialización venezolana del cierre fiscal. Templates de cierre venezolanos con integración de tipos de cambio.
+
+**Dependencias:** `account_fiscal_year_closing`, `l10n_ve_contact`, `l10n_ve_rate`
 
 #### `l10n_ve_ref_bank`
-Validación de referencias bancarias en diarios de pago:
-- Campos para número de referencia bancaria con validación de formato
-- Configuración por diario (banco) de prefijos y longitudes aceptadas
-- Evita registrar pagos con referencias mal formateadas
+Validación de referencias bancarias en diarios de pago por prefijo y longitud.
+
+**Dependencias:** `l10n_ve_invoice`
 
 #### `l10n_ve_suggested_amount`
-Mejora UX para pagos multimoneda:
-- Extiende `account.payment.register` con campo `suggested_amount`
-- Calcula automáticamente cuánto pagar en VES equivalente al saldo en USD según tasa vigente
-- Vista del wizard extendida con el campo sugerido
+Calcula automáticamente el monto equivalente en VES al registrar un pago en USD.
+
+**Dependencias:** `account`, `l10n_ve_accountant`
 
 #### `l10n_ve_auditlog`
-Auditoría de cambios:
-- Extiende `mail.tracking.value` para registrar cambios en campos críticos de `account.move` y `account.payment`
-- Vistas de log de auditoría filtradas por documento
-- Útil para trazabilidad ante el SENIAT
+Auditoría de cambios en `account.move` y `account.payment` con log visible en chatter.
+
+**Dependencias:** `l10n_ve_accountant`, `l10n_ve_payment_extension`
 
 #### `l10n_ve_donation`
-Gestión de donaciones caritativas/sociales:
-- `account.move`: campo `is_donation` que marca el asiento
-- Validación de que las donaciones solo usen partners empresa (no personas naturales)
-- `sale.order`: ventas marcadas como donación
-- `stock.picking` / `stock.move`: movimientos de bienes donados con contabilización automática
-- `stock.scrap`: bajas de inventario por donación
-- Reporte **Certificado de Donación** imprimible
+Donaciones con certificado imprimible, integración con inventario y validación de partner empresa.
+
+**Dependencias:** `l10n_ve_accountant`, `l10n_ve_stock`, `l10n_ve_invoice`, `l10n_ve_sale`
 
 #### `l10n_ve_invoice_loyalty`
-Integración del módulo nativo `loyalty` de Odoo con facturación venezolana:
-- Extiende `account.move` para aplicar rewards/puntos de fidelización en facturas
-- Módulo liviano que actúa como glue entre `loyalty` y `l10n_ve_invoice`
+Integración de programas de fidelización con facturación venezolana.
+
+**Dependencias:** `l10n_ve_invoice`, `loyalty`
 
 #### `l10n_ve_studio`
-Control de Odoo Studio para la localización:
-- Hook `post_init_hook` que desactiva o restringe funcionalidades de Studio que entrarían en conflicto con las vistas y modelos de la localización
-- Solo instalar si se va a usar Odoo Studio en un entorno venezolano
+Restricciones de Odoo Studio para compatibilidad con la localización.
+
+**Dependencias:** `l10n_ve_base`
+
+#### `l10n_ve_currency_rate_live`
+Sincronización automática de tasa de cambio BCV.
+
+**Dependencias:** `l10n_ve_rate`, `currency_rate_live`
 
 ---
 
-## 4. Fichas Detalladas de Cada Módulo
-
-| Módulo | Descripción funcional | Dependencias directas |
-|--------|----------------------|----------------------|
-| `l10n_ve_base` | Infraestructura técnica común de la localización. Extiende vistas y módulos base. | `base`, `web` |
-| `l10n_ve_rate` | Tipos de cambio venezolanos (BCV oficial, paralela). Conversiones VES/USD. | `base`, `l10n_ve_base` |
-| `l10n_ve_location` | Ciudades, municipios y parroquias de Venezuela (23 estados). | `base`, `contacts` |
-| `l10n_ve_contact` | Validación RIF, prefijos (V/E/J/G), tipo contribuyente, domicilio fiscal. | `base`, `contacts`, `account`, `l10n_ve_rate`, `l10n_ve_location` |
-| `od_journal_sequence` | Secuencias numéricas independientes por diario contable. | `account` |
-| `l10n_ve_accountant` | Motor contable venezolano: UT, multimoneda, pagos, reportes. | `base`, `web`, `account`, `account_reports`, `purchase`, `sale`, `l10n_ve_base`, `l10n_ve_rate`, `l10n_ve_contact`, `account_invoice_pricelist`, `account_invoice_pricelist_sale` |
-| `l10n_ve_invoice` | Número de control, correlativo, referencia aduanal, factura libre SENIAT. | `l10n_ve_rate`, `l10n_ve_base`, `l10n_ve_accountant`, `l10n_ve_contact`, `od_journal_sequence`, `account_debit_note` |
-| `l10n_ve_tax_payer` | Tipo contribuyente en partner: retiene IVA/ISLR/Municipal. | `base`, `l10n_ve_rate`, `l10n_ve_accountant` |
-| `l10n_ve_payment_extension` | Retenciones IVA, ISLR y Municipal. ARCV. Comprobantes. | `base`, `account`, `l10n_ve_rate`, `l10n_ve_accountant`, `l10n_ve_invoice`, `l10n_ve_location`, `l10n_ve_contact`, `l10n_ve_tax_payer`, `product`, `stock` |
-| `l10n_ve_igtf` | IGTF 3% en pagos en divisas. Anticipos con cuentas puente. | `base`, `l10n_ve_accountant`, `l10n_ve_invoice`, `l10n_ve_tax_payer`, `l10n_ve_base` |
-| `l10n_ve_filter_partner` | Mixin técnico: filtro clientes/proveedores en formularios. | `web` |
-| `l10n_ve_stock` | Inventario venezolano: valoración VES, precios en divisas, transferencias. | `stock`, `product`, `l10n_ve_rate`, `stock_delivery` |
-| `l10n_ve_sale` | Ventas con tipos de cambio, precios en divisas, reportes. | `base`, `l10n_ve_base`, `sale`, `l10n_ve_rate`, `l10n_ve_contact`, `l10n_ve_invoice`, `l10n_ve_filter_partner`, `l10n_ve_stock` |
-| `l10n_ve_purchase` | Compras venezolanas (liviano, principalmente configuraciones). | `purchase`, `account` |
-| `l10n_ve_stock_purchase` | Glue: compras ↔ inventario venezolano. | `purchase_stock` |
-| `l10n_ve_donation` | Donaciones con certificado imprimible e integración inventario. | `l10n_ve_accountant`, `l10n_ve_stock`, `l10n_ve_invoice`, `l10n_ve_sale` |
-| `l10n_ve_stock_account` | Guías de despacho, autoconsumo, integración inventario/facturación. | `l10n_ve_stock`, `l10n_ve_invoice`, `l10n_ve_accountant`, `l10n_ve_sale`, `l10n_ve_donation`, `sale_stock`, `web` |
-| `l10n_ve_stock_reports` | Libro de inventario para cierre fiscal. | `stock`, `account`, `sale_stock` |
-| `l10n_ve_pos` | POS venezolano multimoneda, tipos de cambio, RIF en POS. | `base`, `point_of_sale`, `l10n_ve_rate`, `l10n_ve_contact`, `l10n_ve_stock`, `l10n_ve_location`, `l10n_ve_accountant` |
-| `l10n_ve_pos_igtf` | IGTF en POS para pagos en divisas. | `base`, `l10n_ve_pos`, `l10n_ve_igtf` |
-| `l10n_ve_iot_mf` | Máquinas fiscales TFHKA: IoT, envío de facturas, Reporte Z. | `iot`, `account`, `web`, `l10n_ve_invoice`, `l10n_ve_tax_payer`, `l10n_ve_stock_account` |
-| `l10n_ve_pos_mf` | POS ↔ máquina fiscal: libro de ventas fiscal. | `point_of_sale`, `l10n_ve_pos`, `pos_iot`, `l10n_ve_iot_mf` |
-| `l10n_ve_invoice_digital` | Factura digital con retenciones automáticas (TFHKA). | `base`, `account`, `l10n_ve_igtf`, `account_debit_note`, `l10n_ve_invoice`, `l10n_ve_iot_mf`, `l10n_ve_stock_account`, `l10n_ve_payment_extension`, `stock` |
-| `l10n_ve_price_list` | Listas de precio multimoneda, vistas extendidas. | `account`, `account_invoice_pricelist`, `l10n_ve_sale` |
-| `l10n_ve_ref_bank` | Validación de referencias bancarias en diarios. | `l10n_ve_invoice` |
-| `l10n_ve_suggested_amount` | Monto sugerido en registro de pago multimoneda. | `account`, `l10n_ve_accountant` |
-| `l10n_ve_fiscal_lock_days` | Bloqueo de períodos fiscales por fecha. | `base`, `account_accountant`, `l10n_ve_accountant` |
-| `account_fiscal_year_closing` | Base genérica OCA para cierre de año fiscal. | `account` |
-| `l10n_ve_account_fiscalyear_closing` | Cierre fiscal venezolano con tipos de cambio y RIF. | `account_fiscal_year_closing`, `l10n_ve_contact`, `l10n_ve_rate` |
-| `l10n_ve_auditlog` | Auditoría de cambios en movimientos y pagos. | `l10n_ve_accountant`, `l10n_ve_payment_extension` |
-| `l10n_ve_invoice_loyalty` | Fidelización en facturación venezolana. | `l10n_ve_invoice`, `loyalty` |
-| `l10n_ve_studio` | Restricciones de Studio para la localización. | `l10n_ve_base` |
-| `l10n_ve_currency_rate_live` | Sincronización automática tasa BCV. | `l10n_ve_rate`, `currency_rate_live` |
-
----
-
-## 5. Árbol de Dependencias
+## 9. Árbol de Dependencias
 
 ```
 base / web / account / account_accountant
@@ -507,12 +755,12 @@ base / web / account / account_accountant
 
 ---
 
-## 6. Qué cubre y qué no cubre esta localización
+## 10. Cobertura de la Localización
 
 ### Cubre completamente
 
-| Área | Módulos |
-|------|---------|
+| Área | Módulo(s) |
+|------|-----------|
 | Plan de cuentas venezolano | Oficial Odoo 19 (`l10n_ve` core) |
 | Validación de RIF | `l10n_ve_contact` |
 | Geografía (estados/municipios/parroquias) | `l10n_ve_location` |
@@ -539,21 +787,29 @@ base / web / account / account_accountant
 
 | Área | Detalle |
 |------|---------|
-| **SENIAT EDI / factura electrónica XML** | La "factura digital" implementada aquí es vía máquina fiscal TFHKA, no el formato XML del SENIAT (si aplica) |
-| **Declaración mensual de IVA (Forma 30)** | No hay exportación automática al formato del SENIAT |
-| **ARC (Agentes de Retención de ISLR)** | Los comprobantes se generan pero no se exportan en formato XML SENIAT |
+| **Declaración mensual de IVA (Forma 30)** | No hay exportación automática al formato SENIAT |
+| **ARC en formato XML SENIAT** | Los comprobantes se generan en PDF pero no en XML |
+| **Nómina venezolana** | No hay módulo de nómina local (IVSS, FAOV, LCT, utilidades, etc.) |
+| **Libro de compras y ventas** | No se observó reporte de libro CV estándar SENIAT |
+| **Declaración de impuesto municipal** | Existe retención pero no módulo de declaración/pago municipal |
 | **Contabilidad pública / gobierno** | La localización es para empresas privadas |
-| **Nómina venezolana** | No hay módulo de nómina local (IVSS, FAOV, LCT, etc.) |
-| **Libro de compras y ventas (BCV/SENIAT)** | No se observó reporte de libro de compras/ventas estándar |
-| **Impuesto municipal a las actividades económicas (pago)** | Existe retención pero no módulo de declaración municipal |
 
 ---
 
+## 11. Checklist de Pruebas por Módulo
+
+Las pruebas están ordenadas igual que el orden de instalación.
+
 ---
 
-## 7. Checklist de Pruebas por Módulo
+### Plan de cuentas oficial Odoo 19 (`l10n_ve` core)
 
-Las pruebas están ordenadas igual que el orden de instalación. Cada sección asume que los módulos anteriores ya fueron instalados y probados.
+> Se configura durante el asistente de creación de empresa, no es un módulo separado.
+
+- [ ] Al crear/configurar la empresa, seleccionar **Venezuela** como país
+- [ ] Verificar que el plan de cuentas venezolano se aplica automáticamente (activos, pasivos, patrimonio, ingresos, gastos)
+- [ ] Ir a **Contabilidad → Configuración → Impuestos** — deben existir: IVA 16%, IVA 8%, Exento, Cero
+- [ ] Ir a **Contabilidad → Configuración → Diarios** — deben existir al menos: Ventas, Compras, Banco, Caja
 
 ---
 
@@ -563,7 +819,7 @@ Las pruebas están ordenadas igual que el orden de instalación. Cada sección a
 
 - [ ] El módulo instala sin errores en el log del servidor
 - [ ] En **Ajustes → Técnico → Vistas** existen vistas con módulo `l10n_ve_base`
-- [ ] En **Ajustes** aparece alguna sección con configuraciones de Venezuela (aunque estén vacías)
+- [ ] En **Ajustes** aparece alguna sección con configuraciones de Venezuela
 
 ---
 
@@ -582,7 +838,7 @@ Las pruebas están ordenadas igual que el orden de instalación. Cada sección a
 - [ ] Ir a **Contactos → Configuración → Municipios** — debe listar los 335 municipios de Venezuela
 - [ ] Ir a **Contactos → Configuración → Parroquias** — debe listar las parroquias
 - [ ] Ir a **Contactos → Configuración → Ciudades** — debe listar ciudades venezolanas
-- [ ] Crear un contacto y verificar que los campos Municipio/Parroquia están disponibles y filtran correctamente por estado
+- [ ] Crear un contacto y verificar que los campos Municipio/Parroquia están disponibles y filtran por estado
 
 ---
 
@@ -591,65 +847,49 @@ Las pruebas están ordenadas igual que el orden de instalación. Cada sección a
 - [ ] Crear un contacto de tipo Empresa y verificar que aparece el campo **Prefijo RIF** (V, E, J, G, P)
 - [ ] Ingresar un RIF con formato correcto (ej. `J-12345678-9`) — debe aceptarlo
 - [ ] Ingresar un RIF con formato incorrecto — debe mostrar error de validación
-- [ ] Verificar que el campo **Tipo de Contribuyente** está disponible (Ordinario, Especial, Exento, etc.)
+- [ ] Verificar que el campo **Tipo de Contribuyente** está disponible
 - [ ] En **Ajustes → Empresa** verificar que el RIF de la empresa se puede configurar con prefijo
-- [ ] Crear un contacto persona natural con prefijo `V` y uno jurídico con `J` — ambos deben guardarse
-
----
-
-### Plan de cuentas oficial Odoo 19 (`l10n_ve` core)
-
-> Se configura durante el asistente de creación de empresa, no es un módulo separado.
-
-- [ ] Al crear/configurar la empresa, seleccionar **Venezuela** como país
-- [ ] Verificar que el plan de cuentas venezolano se aplica automáticamente (activos, pasivos, patrimonio, ingresos, gastos)
-- [ ] Ir a **Contabilidad → Configuración → Impuestos** — deben existir: IVA 16%, IVA 8%, Exento, Cero
-- [ ] Ir a **Contabilidad → Configuración → Diarios** — deben existir al menos: Ventas, Compras, Banco, Caja
+- [ ] Crear un contacto persona natural con prefijo `V` y uno jurídico con `J`
 
 ---
 
 ### `od_journal_sequence`
 
 - [ ] Ir a **Contabilidad → Configuración → Diarios**, abrir el diario de Ventas
-- [ ] Verificar que existe la pestaña o campo **Secuencia** con configuración de prefijo y siguiente número
-- [ ] Crear una factura y confirmar — el número asignado debe seguir la secuencia del diario
-- [ ] Crear una factura en otro diario — debe tener numeración independiente al primero
-- [ ] Cambiar el prefijo de secuencia de un diario y confirmar una nueva factura — debe usar el nuevo prefijo
+- [ ] Verificar que existe configuración de **Secuencia** con prefijo y siguiente número
+- [ ] Crear una factura y confirmar — el número debe seguir la secuencia del diario
+- [ ] Crear una factura en otro diario — debe tener numeración independiente
+- [ ] Cambiar el prefijo de secuencia de un diario y confirmar nueva factura — debe usar el nuevo prefijo
 
 ---
 
 ### `l10n_ve_accountant`
 
-- [ ] Ir a **Contabilidad → Configuración → Unidad Tributaria** — debe existir el modelo con el valor actual de la UT
-- [ ] Crear un valor de UT (ej. 0,02 VES) y guardar
-- [ ] Crear una factura de cliente en USD — verificar que aparece el campo **Tasa de Cambio** en el encabezado
-- [ ] El campo `Fecha de Factura (Display)` debe mostrarse correctamente en zona horaria Venezuela
-- [ ] Ir a **Contabilidad → Reportes** — verificar que existen reportes venezolanos disponibles
-- [ ] Crear un pago en USD — verificar que el sistema calcula el equivalente en VES automáticamente
-- [ ] En **Ajustes → Contabilidad** verificar las configuraciones venezolanas (contribuyente especial, RIF empresa, etc.)
-- [ ] Verificar que `res.company` tiene el campo **Contribuyente Especial** y se puede marcar
+- [ ] Ir a **Contabilidad → Configuración → Unidad Tributaria** — debe existir el modelo
+- [ ] Crear un valor de UT y guardar
+- [ ] Crear una factura de cliente en USD — verificar que aparece el campo **Tasa de Cambio**
+- [ ] El campo `Fecha de Factura (Display)` debe mostrarse en zona horaria Venezuela
+- [ ] Crear un pago en USD — verificar que calcula el equivalente en VES automáticamente
+- [ ] En **Ajustes → Contabilidad** verificar las configuraciones venezolanas (contribuyente especial, RIF)
 
 ---
 
 ### `l10n_ve_invoice`
 
-- [ ] Crear una factura de cliente, confirmarla — debe aparecer el campo **Número de Control** con correlativo automático
-- [ ] Verificar que el número de control sigue la secuencia del diario (ej. `00-00000001`)
-- [ ] Crear una segunda factura — el número de control debe ser `00-00000002`
-- [ ] Ir al diario de ventas y configurar un prefijo de control diferente — nueva factura debe usar ese prefijo
-- [ ] Crear una factura de proveedor — verificar que aparece el campo **Fecha de Recepción de Factura**
-- [ ] En una factura de importación, verificar que el campo **Declaración Única de Aduanas** está disponible
-- [ ] Imprimir una factura con el reporte **Factura en Formato Libre** — debe mostrar logo, RIF, número de control, datos del cliente y detalle
-- [ ] Crear una Nota de Débito desde una factura confirmada — debe generar su propio número de control
+- [ ] Crear una factura de cliente, confirmarla — debe aparecer el **Número de Control** correlativo
+- [ ] Crear una segunda factura — el número de control debe incrementar
+- [ ] Configurar un prefijo de control diferente en el diario — nueva factura debe usarlo
+- [ ] Crear una factura de proveedor — verificar campo **Fecha de Recepción de Factura**
+- [ ] En una factura de importación, verificar campo **Declaración Única de Aduanas**
+- [ ] Imprimir la factura con el reporte **Formato Libre** — verificar todos los campos requeridos por SENIAT (sección 6.1)
+- [ ] Crear una Nota de Débito — debe generar su propio número de control
 
 ---
 
 ### `l10n_ve_tax_payer`
 
-- [ ] Abrir un contacto proveedor e ir a la pestaña **Contabilidad** (o sección tributaria)
-- [ ] Verificar que existen los campos: **Retiene IVA**, **Porcentaje de Retención IVA**, **Retiene ISLR**, **Retiene Municipal**
-- [ ] Marcar un proveedor como **Contribuyente Especial** con retención de IVA al 75% — guardar
-- [ ] Verificar que el flag persiste y es visible al reabrir el registro
+- [ ] Abrir un contacto proveedor — verificar campos: **Retiene IVA**, **Porcentaje IVA**, **Retiene ISLR**, **Retiene Municipal**
+- [ ] Marcar un proveedor como Contribuyente Especial con retención IVA 75%
 - [ ] Crear otro proveedor como ordinario sin retenciones — verificar diferencia en flags
 
 ---
@@ -657,281 +897,228 @@ Las pruebas están ordenadas igual que el orden de instalación. Cada sección a
 ### `l10n_ve_payment_extension`
 
 **Retención IVA:**
-- [ ] Configurar un proveedor como Contribuyente Especial (retiene IVA 75%)
-- [ ] Crear una factura de ese proveedor por 100 USD + IVA 16% → base IVA = 16 USD → retención = 12 USD
-- [ ] Al registrar el pago, verificar que aparece el botón/sección de **Crear Retención IVA**
-- [ ] Crear la retención — debe generarse un `account.retention` con número secuencial
-- [ ] Imprimir el **Comprobante de Retención IVA (ARCV)** — debe mostrar datos de empresa, proveedor, factura y monto retenido
-- [ ] Confirmar la retención y verificar el asiento contable generado
+- [ ] Configurar proveedor como Contribuyente Especial (retiene IVA 75%)
+- [ ] Crear factura de ese proveedor con IVA → al pagar, crear la retención
+- [ ] Verificar cálculo: base IVA × 75% = monto retenido
+- [ ] Imprimir el **ARCV de IVA** — verificar campos requeridos (sección 6.2)
+- [ ] Confirmar la retención y verificar asiento contable
 
 **Retención ISLR:**
-- [ ] Ir a **Contabilidad → Configuración → Conceptos de Retención ISLR** — deben existir conceptos predefinidos (honorarios, servicios, etc.)
-- [ ] Marcar un proveedor con **Retiene ISLR**
-- [ ] Crear factura de ese proveedor por servicio profesional
-- [ ] Al pagar, crear la retención ISLR con el concepto correspondiente — verificar cálculo de alícuota
-- [ ] Imprimir el ARCV de ISLR — debe mostrar acumulado de honorarios si aplica
+- [ ] Ir a **Contabilidad → Configuración → Conceptos de Retención ISLR** — deben existir conceptos
+- [ ] Crear retención ISLR sobre factura de servicio profesional
+- [ ] Verificar cálculo según alícuota del concepto
+- [ ] Imprimir ARCV de ISLR
 
 **Retención Municipal:**
-- [ ] Ir a **Contabilidad → Configuración → Actividades Económicas** — verificar que existen actividades
-- [ ] Asignar una actividad económica al proveedor
-- [ ] Crear factura y retención municipal — verificar cálculo según alícuota de la actividad
-- [ ] Imprimir comprobante de retención municipal
+- [ ] Ir a **Contabilidad → Configuración → Actividades Económicas** — verificar que existen
+- [ ] Asignar actividad al proveedor, crear retención municipal y verificar cálculo
 
 ---
 
 ### `l10n_ve_igtf`
 
-- [ ] Ir a **Contabilidad → Configuración → Diarios**, abrir el diario de Banco en USD
-- [ ] Verificar que existe el campo **Aplica IGTF** — marcarlo
-- [ ] Configurar la **Cuenta Puente IGTF** en **Ajustes → Contabilidad**
-- [ ] Crear una factura de cliente en USD y registrar el pago por ese diario bancario USD
-- [ ] Verificar que al confirmar el pago, se genera automáticamente el cargo del 3% de IGTF
-- [ ] Revisar el asiento contable del pago — debe tener una línea adicional de IGTF
-- [ ] Crear un anticipo de cliente: crear pago por adelantado sin factura — debe marcarse como `is_advance_move`
-- [ ] Verificar que el anticipo queda disponible para aplicar a futuras facturas
-- [ ] En la factura impresa (**Formato Libre**), verificar que aparece la línea de IGTF cuando aplica
+- [ ] En el diario de Banco USD marcar **Aplica IGTF**
+- [ ] Configurar la **Cuenta Puente IGTF** en Ajustes
+- [ ] Crear factura en USD y registrar pago por ese diario — verificar cargo automático del 3%
+- [ ] Revisar asiento contable del pago — debe tener línea adicional de IGTF
+- [ ] Crear anticipo de cliente en USD — debe marcarse como `is_advance_move`
+- [ ] En la factura impresa verificar que aparece la línea de IGTF
 
 ---
 
 ### `l10n_ve_filter_partner`
 
-> Módulo técnico. Verificar comportamiento en formularios.
-
-- [ ] Al crear una factura de cliente, el campo **Cliente** solo muestra contactos marcados como clientes
-- [ ] Al crear una factura de proveedor, el campo **Proveedor** solo muestra contactos marcados como proveedores
-- [ ] Crear un contacto que sea solo proveedor — no debe aparecer en el selector de clientes de facturas de venta
+- [ ] Al crear factura de cliente, el campo Cliente solo muestra contactos marcados como clientes
+- [ ] Al crear factura de proveedor, el campo Proveedor solo muestra proveedores
 
 ---
 
 ### `l10n_ve_stock`
 
-- [ ] Ir a **Inventario → Productos** — verificar que los productos tienen campo de **Precio en Moneda Extranjera**
-- [ ] Ingresar precio en USD a un producto — verificar que se calcula el equivalente en VES según tasa
-- [ ] Crear un ajuste de inventario — verificar que la valoración muestra VES
-- [ ] Ir a **Inventario → Reportes → Valoración de Inventario** — debe mostrar valores en VES con nota de tasa de cambio
-- [ ] Crear una transferencia interna — verificar que los campos venezolanos están presentes
-- [ ] Imprimir etiqueta de empaque desde una transferencia — debe generarse correctamente
+- [ ] Verificar que los productos tienen campo de **Precio en Moneda Extranjera**
+- [ ] Ingresar precio en USD — verificar equivalente en VES según tasa
+- [ ] Ir a **Inventario → Reportes → Valoración** — debe mostrar valores en VES
+- [ ] Crear transferencia interna — verificar campos venezolanos presentes
 
 ---
 
 ### `l10n_ve_sale`
 
-- [ ] Crear una orden de venta — verificar que el selector de cliente usa el filtro venezolano (solo clientes)
-- [ ] Agregar una línea con producto en USD — verificar que la línea muestra precio en USD y equivalente en VES
-- [ ] Cambiar la tasa de cambio y verificar que los precios se actualizan (o el cron lo hace)
-- [ ] Confirmar la orden y crear la factura — verificar que hereda número de control y datos venezolanos
-- [ ] Imprimir el reporte de la orden de venta — debe mostrar datos venezolanos correctamente
-- [ ] Verificar que el campo **Almacén** en la orden usa el almacén venezolano configurado
+- [ ] Crear orden de venta — el selector de cliente usa filtro venezolano
+- [ ] Agregar línea con producto en USD — verificar precio en USD y equivalente VES
+- [ ] Confirmar orden y crear factura — verificar que hereda número de control y datos venezolanos
+- [ ] Imprimir reporte de la orden
 
 ---
 
 ### `l10n_ve_purchase`
 
-- [ ] Crear una orden de compra — verificar que el selector de proveedor funciona correctamente
-- [ ] Confirmar la orden y crear la factura de proveedor — verificar que hereda fecha de recepción
-- [ ] Verificar que los grupos de seguridad de compras están correctamente configurados
+- [ ] Crear orden de compra y confirmarla
+- [ ] Crear factura de proveedor desde la orden — verificar fecha de recepción
 
 ---
 
 ### `l10n_ve_stock_purchase`
 
-- [ ] Crear una orden de compra con productos en inventario
-- [ ] Confirmar la orden — debe crearse automáticamente un recibo en almacén
-- [ ] Validar el recibo — verificar que el movimiento de inventario usa los campos venezolanos
-- [ ] Crear la factura desde la orden de compra confirmada — verificar integración completa
+- [ ] Confirmar orden de compra → debe crear recibo en almacén automáticamente
+- [ ] Validar recibo → movimiento usa campos venezolanos
 
 ---
 
 ### `l10n_ve_stock_account`
 
-- [ ] Ir a **Inventario → Configuración → Razones de Transferencia** — deben existir razones predefinidas (Venta, Traslado, Donación, etc.)
-- [ ] Crear una transferencia de almacén y asignarle una razón
-- [ ] Validar la transferencia — debe generarse o vincularse una **Guía de Despacho**
-- [ ] Abrir la guía de despacho — verificar número secuencial, campos de transportista, origen y destino
-- [ ] Imprimir la guía de despacho — debe ser un documento imprimible con formato legal
-- [ ] Configurar una **Alerta de Autoconsumo** en **Inventario → Configuración → Alertas**
-- [ ] Simular un movimiento que dispare la alerta — verificar que la notificación aparece
-- [ ] Verificar que la factura generada desde la guía de despacho tiene número de control correcto
+- [ ] Ir a **Inventario → Configuración → Razones de Transferencia** — deben existir razones
+- [ ] Crear transferencia, asignarle una razón, validarla — debe generarse **Guía de Despacho**
+- [ ] Abrir la guía: verificar número secuencial, campos de transportista, origen y destino
+- [ ] Imprimir la guía — verificar campos requeridos (sección 6.3)
+- [ ] Verificar que la factura generada tiene número de control correcto
 
 ---
 
 ### `l10n_ve_stock_reports`
 
 - [ ] Ir a **Inventario → Reportes → Libro de Inventario**
-- [ ] Seleccionar un período (ej. el mes actual) y ejecutar el reporte
-- [ ] Verificar que el reporte muestra movimientos de entrada, salida y saldo por producto
-- [ ] Exportar o imprimir el reporte — debe ser apto para presentación fiscal
+- [ ] Seleccionar un período y ejecutar — debe mostrar movimientos con saldo por producto
 
 ---
 
 ### `l10n_ve_pos`
 
-- [ ] Ir a **Punto de Venta → Configuración → Ajustes** — verificar campos venezolanos (almacén, tasa de cambio)
-- [ ] Configurar el POS con la tasa de cambio del día
-- [ ] Abrir una sesión de POS
-- [ ] Buscar un cliente por **RIF** desde el POS — debe encontrar al contacto venezolano
-- [ ] Crear una venta con pago en USD — verificar que el sistema muestra el equivalente en VES
-- [ ] Crear una venta con pago en VES — flujo normal
-- [ ] Cerrar la sesión de POS — verificar que el cierre muestra resumen por tipo de pago y moneda
-- [ ] Generar el **Reporte de Pagos** de la sesión — debe mostrar desgloses venezolanos
+- [ ] Configurar POS con tasa de cambio del día
+- [ ] Abrir sesión de POS
+- [ ] Buscar un cliente por **RIF** desde el POS
+- [ ] Crear venta con pago en USD — verificar equivalente en VES
+- [ ] Cerrar sesión — verificar resumen por tipo de pago y moneda
+- [ ] Generar **Reporte de Pagos** de la sesión
 
 ---
 
 ### `l10n_ve_pos_igtf`
 
-- [ ] Configurar un método de pago en USD en el POS
-- [ ] Abrir el POS y crear una venta
-- [ ] Seleccionar pago en USD — debe aparecer el cálculo del IGTF (3%) automáticamente
+- [ ] Crear venta en POS con pago en USD — debe aparecer cálculo del IGTF (3%) automáticamente
 - [ ] Verificar que el total cobrado incluye el IGTF
-- [ ] Revisar la orden cerrada — el IGTF debe estar registrado como línea separada en el pago
+- [ ] En la orden cerrada, el IGTF debe estar registrado como línea separada
 
 ---
 
 ### `l10n_ve_stock_reports`
 
-- [ ] Ir al menú de reportes de inventario
 - [ ] Ejecutar el **Libro de Inventario** para un período
-- [ ] Verificar que incluye productos con sus movimientos de entrada/salida y saldo final
-- [ ] Confirmar que los valores están en VES con la tasa del período
+- [ ] Verificar que incluye movimientos de entrada/salida y saldo final en VES
 
 ---
 
 ### `account_fiscal_year_closing`
 
 - [ ] Ir a **Contabilidad → Contabilidad → Cierres de Año Fiscal**
-- [ ] Verificar que existen **Plantillas de Cierre** precargadas
-- [ ] Crear un nuevo cierre de año fiscal para el período anterior
-- [ ] Ejecutar el paso "Preparar" — debe validar que no hay asientos pendientes de confirmar
-- [ ] Revisar los asientos de cierre propuestos — deben incluir traslado de resultados y apertura de balance
+- [ ] Verificar que existen plantillas de cierre precargadas
+- [ ] Crear cierre para el período anterior y ejecutar el paso "Preparar"
 
 ---
 
 ### `l10n_ve_account_fiscalyear_closing`
 
-- [ ] Abrir el cierre fiscal creado anteriormente — verificar que tiene campos venezolanos (RIF empresa, tasa de cambio de cierre)
-- [ ] Verificar que las plantillas de cierre venezolanas están disponibles
-- [ ] Ejecutar el cierre completo (preparar → confirmar → validar)
-- [ ] Verificar que los asientos generados tienen la tasa de cambio correcta al cierre del período
+- [ ] Verificar campos venezolanos en el cierre (RIF empresa, tasa de cambio de cierre)
+- [ ] Ejecutar cierre completo (preparar → confirmar → validar)
+- [ ] Verificar que los asientos generados tienen la tasa de cambio correcta
 
 ---
 
 ### `l10n_ve_fiscal_lock_days`
 
-- [ ] Ir a **Contabilidad → Configuración → Ajustes** — sección de bloqueo fiscal
-- [ ] Configurar una fecha de bloqueo de facturas (ej. bloquear hasta el 31 del mes anterior)
-- [ ] Intentar crear y confirmar una factura con fecha anterior al bloqueo — debe mostrar error de período bloqueado
-- [ ] Cambiar la fecha de bloqueo usando el wizard **Cambiar Fecha de Bloqueo** — debe requerir justificación
-- [ ] Verificar que el cambio de fecha queda registrado en el log de auditoría
+- [ ] Configurar fecha de bloqueo de facturas en Ajustes
+- [ ] Intentar crear factura con fecha anterior al bloqueo — debe mostrar error
+- [ ] Cambiar fecha de bloqueo con el wizard — debe requerir justificación
 
 ---
 
 ### `l10n_ve_ref_bank`
 
-- [ ] Ir a **Contabilidad → Configuración → Diarios**, abrir un diario de tipo Banco
-- [ ] Verificar que existen campos de configuración de referencia bancaria (prefijo, longitud)
-- [ ] Configurar el diario con un prefijo y longitud de referencia (ej. 20 dígitos)
-- [ ] Registrar un pago con ese diario usando una referencia válida — debe aceptarla
-- [ ] Registrar un pago con referencia de longitud incorrecta — debe mostrar error de validación
+- [ ] Configurar diario bancario con prefijo y longitud de referencia
+- [ ] Registrar pago con referencia válida — debe aceptarla
+- [ ] Registrar pago con referencia de longitud incorrecta — debe mostrar error
 
 ---
 
 ### `l10n_ve_suggested_amount`
 
-- [ ] Crear una factura de cliente en USD con saldo pendiente
-- [ ] Ir a **Registrar Pago** desde la factura
-- [ ] En el wizard de pago, verificar que aparece el campo **Monto Sugerido** con el equivalente en VES
-- [ ] Cambiar la tasa de cambio en el wizard — el monto sugerido debe recalcularse
-- [ ] Confirmar el pago con el monto sugerido — la factura debe quedar saldada
+- [ ] Crear factura en USD con saldo pendiente
+- [ ] Ir a **Registrar Pago** — verificar campo **Monto Sugerido** en VES
+- [ ] Cambiar la tasa — el monto sugerido debe recalcularse
+- [ ] Confirmar el pago — la factura debe quedar saldada
 
 ---
 
 ### `l10n_ve_auditlog`
 
-- [ ] Crear y confirmar una factura
-- [ ] Modificar algún campo editable (ej. nota) y guardar
-- [ ] Ir al chatter de la factura — debe mostrar el tracking del cambio con valor anterior y nuevo
-- [ ] Registrar un pago y luego intentar modificarlo
-- [ ] Ir a **Contabilidad → Técnico → Logs de Auditoría** (si el menú existe) — verificar registros
+- [ ] Crear y confirmar una factura, modificar un campo editable
+- [ ] Verificar que el chatter muestra el tracking del cambio con valor anterior y nuevo
 - [ ] Verificar que los cambios en `account.payment` también quedan registrados
 
 ---
 
 ### `l10n_ve_donation`
 
-- [ ] Ir a **Ajustes → Contabilidad** — verificar configuración de donaciones (cuenta contable de donación)
-- [ ] Crear una orden de venta y marcarla como **Donación**
-- [ ] Verificar que solo se puede seleccionar un cliente tipo Empresa (no persona natural)
-- [ ] Confirmar la orden y validar el despacho — el movimiento de inventario debe usar la lógica de donación
-- [ ] Crear la factura de donación — debe marcarse automáticamente como donación
-- [ ] Imprimir el **Certificado de Donación** — debe mostrar datos del donante, descripción de bienes y montos
+- [ ] Verificar configuración de cuenta contable de donación en Ajustes
+- [ ] Crear orden de venta marcada como **Donación** — solo debe aceptar clientes empresa
+- [ ] Confirmar orden, validar despacho, crear factura
+- [ ] Imprimir **Certificado de Donación** — verificar campos
 
 ---
 
 ### `l10n_ve_price_list`
 
-- [ ] Ir a **Ventas → Configuración → Listas de Precio** — crear una lista en USD
-- [ ] Asignar la lista de precio a un cliente
-- [ ] Crear una orden de venta para ese cliente — verificar que los precios se muestran en USD
-- [ ] En la factura generada, verificar que la lista de precio y moneda están correctamente reflejadas
-- [ ] Abrir un producto — verificar que la vista de lista de precio venezolana muestra precio en moneda extranjera
+- [ ] Crear lista de precio en USD y asignarla a un cliente
+- [ ] Crear orden de venta para ese cliente — precios en USD correctamente mostrados
+- [ ] Verificar que la factura generada refleja la lista de precio
 
 ---
 
 ### `l10n_ve_currency_rate_live` *(opcional)*
 
 - [ ] Ir a **Contabilidad → Configuración → Divisas**
-- [ ] Hacer clic en **Actualizar Tasas** — el sistema debe consultar el BCV y actualizar la tasa del USD
+- [ ] Hacer clic en **Actualizar Tasas** — debe consultar el BCV y actualizar USD
 - [ ] Verificar que la tasa actualizada es razonable (tasa BCV oficial del día)
-- [ ] Configurar la actualización automática (cron) y verificar que está activa
-- [ ] Revisar el historial de tasas de USD — deben aparecer las actualizaciones automáticas
+- [ ] Configurar el cron de actualización automática
 
 ---
 
-### `l10n_ve_iot_mf` *(opcional — requiere hardware TFHKA)*
+### `l10n_ve_iot_mf` *(requiere hardware TFHKA)*
 
-- [ ] Configurar la IP y token de la máquina fiscal en **Ajustes → Contabilidad**
-- [ ] Ir a **IoT → Dispositivos** — verificar que aparece la máquina fiscal como dispositivo
+- [ ] Configurar IP y token de máquina fiscal en Ajustes
+- [ ] Verificar que aparece como dispositivo IoT
 - [ ] Marcar el diario de ventas como **Con Máquina Fiscal**
-- [ ] Mapear los impuestos IVA 16% y 8% a los códigos de la máquina fiscal
-- [ ] Crear y confirmar una factura de cliente — el sistema debe enviarla a la máquina fiscal
-- [ ] Verificar que la factura recibe el número de secuencia fiscal de la máquina
-- [ ] Ejecutar el **Reporte Z** al final del día — la máquina debe emitir el cierre diario
+- [ ] Mapear impuestos IVA a códigos de la máquina
+- [ ] Confirmar una factura — debe recibir número de secuencia fiscal
+- [ ] Ejecutar **Reporte Z** al final del día
 
 ---
 
-### `l10n_ve_invoice_digital` *(opcional — requiere `l10n_ve_iot_mf`)*
+### `l10n_ve_invoice_digital` *(requiere `l10n_ve_iot_mf`)*
 
-- [ ] En **Ajustes → Contabilidad** activar **Retenciones Automáticas en Factura Digital**
-- [ ] Crear una factura para un proveedor con retención de IVA configurada
-- [ ] Confirmar la factura — las retenciones deben generarse automáticamente sin intervención manual
-- [ ] Verificar que el almacén de la factura tiene máquina fiscal asociada (requisito previo)
-- [ ] Si el almacén no tiene máquina fiscal, debe aparecer una alerta de advertencia
+- [ ] Activar **Retenciones Automáticas** en Ajustes
+- [ ] Confirmar factura para proveedor con retención configurada — retenciones deben generarse automáticamente
+- [ ] Verificar que el almacén tiene máquina fiscal asociada (si no, debe aparecer alerta)
 
 ---
 
-### `l10n_ve_pos_mf` *(opcional — requiere `l10n_ve_iot_mf` + `l10n_ve_pos`)*
+### `l10n_ve_pos_mf` *(requiere `l10n_ve_iot_mf` + `l10n_ve_pos`)*
 
-- [ ] En configuración del POS, asignar la máquina fiscal al punto de venta
-- [ ] Abrir sesión de POS y realizar una venta
-- [ ] Al cerrar la venta, verificar que se envía a la máquina fiscal y regresa con número fiscal
-- [ ] Verificar que la orden del POS muestra el número de secuencia fiscal
-- [ ] Ir a **Reportes → Libro de Ventas Fiscal** — debe mostrar ventas con números fiscales correlativos
-- [ ] Ejecutar el Reporte Z del POS al cerrar la sesión
+- [ ] Asignar máquina fiscal al POS en configuración
+- [ ] Realizar venta — al cerrar debe enviar a máquina fiscal y recibir número fiscal
+- [ ] Verificar número de secuencia fiscal en la orden POS
+- [ ] Ir a **Reportes → Libro de Ventas Fiscal** — debe mostrar ventas con números fiscales
 
 ---
 
 ### `l10n_ve_invoice_loyalty` *(opcional)*
 
-- [ ] Ir a **eCommerce / Ventas → Programas de Fidelización** — crear un programa con puntos
-- [ ] Asignar el programa a un cliente
-- [ ] Crear una factura para ese cliente — debe aparecer sección para aplicar puntos/rewards
-- [ ] Aplicar un reward — verificar que se genera descuento o línea de ajuste en la factura
-- [ ] Confirmar la factura — el reward debe registrarse en el programa de fidelización
+- [ ] Crear programa de fidelización con puntos
+- [ ] Asignar programa a un cliente
+- [ ] Crear factura para ese cliente — debe aparecer sección para aplicar rewards
+- [ ] Aplicar reward y confirmar — debe registrarse en el programa
 
 ---
 
-*Checklist generado en base al análisis de código fuente. Los valores numéricos (porcentajes, montos) son ejemplos ilustrativos — usar los valores reales configurados en producción.*
-
----
-
-*Documento generado por análisis directo del código fuente del repositorio `odoo-venezuela` rama `19.0`.*
+*Documento de implementación generado desde análisis de código fuente del repositorio `odoo-venezuela` rama `19.0`.  
+Actualizar en cada cambio significativo de módulos o regulaciones.*
