@@ -386,6 +386,35 @@ Esta sección contiene los formularios de recolección de información que deben
   ¿Usa Odoo Studio? & & \modulo{l10n\_ve\_studio} \\
 \end{longtable}
 
+% ============================================================
+%  SUBSECCIÓN 1.6 — DETERMINACIÓN DEL PERFIL
+% ============================================================
+\subsection{Determinación del Perfil}
+
+Solo \textbf{cinco preguntas} del levantamiento determinan el perfil. El resto define módulos opcionales \emph{dentro} de ese perfil.
+El perfil asignado es el \textbf{más alto} que aplique — los perfiles son acumulativos.
+
+\vspace{6pt}
+\rowcolors{2}{gristabla}{white}
+\begin{tabularx}{\textwidth}{C{0.06\textwidth} L{0.50\textwidth} C{0.14\textwidth} C{0.22\textwidth}}
+\rowcolor{naranja}
+\tchead{\#} & \tchead{Pregunta clave del levantamiento} & \tchead{Sección} & \tchead{Si responde SÍ} \\
+1 & ¿Es agente de retención de IVA, ISLR o Municipal? & §1.1 & \textbf{Perfil B} mínimo \\
+2 & ¿Maneja inventario físico o emite guías de despacho? & §1.4 & \textbf{Perfil C} mínimo \\
+3 & ¿Tiene punto de venta (caja registradora)? & §1.4 & \textbf{Perfil D} mínimo \\
+4 & ¿Tiene máquina fiscal TFHKA? & §1.3 & \textbf{Perfil E} \\
+— & Ninguna de las anteriores aplica & — & \textbf{Perfil A} \\
+\end{tabularx}
+
+\vspace{8pt}
+\begin{tcolorbox}[colback=melocoton, colframe=naranja, boxrule=0.8pt, arc=3pt,
+                  left=8pt, right=8pt, top=5pt, bottom=5pt]
+\small\textbf{Ejemplo:} Un cliente que retiene IVA (→ B) y además tiene inventario (→ C) y punto de venta (→ D)
+queda clasificado como \textbf{Perfil D}. Se instalan todos los módulos de A + B + C + D.
+Las demás preguntas del levantamiento (divisas, máquina fiscal, donaciones, etc.)
+determinan qué módulos opcionales se agregan dentro de ese perfil.
+\end{tcolorbox}
+
 \clearpage
 
 % ============================================================

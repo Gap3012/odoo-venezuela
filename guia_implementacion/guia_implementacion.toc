@@ -1,0 +1,73 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {section}{\numberline {1}Levantamiento Previo}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Datos Fiscales}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Operaciones en Moneda Extranjera}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Emisión de Facturas}{3}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Operaciones Comerciales}{3}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}Requerimientos Adicionales}{4}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Determinación del Perfil}{4}{subsection.1.6}%
+\contentsline {section}{\numberline {2}Perfiles de Empresa}{5}{section.2}%
+\contentsline {section}{\numberline {3}Apps Odoo Nativas Requeridas}{7}{section.3}%
+\contentsline {section}{\numberline {4}Instalación por Perfil}{8}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Módulos Opcionales}{9}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Configuración Post-Instalación}{10}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Empresa}{10}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Tipos de Cambio}{10}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Unidad Tributaria}{10}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Diarios Contables}{10}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Impuestos}{10}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Retenciones (Perfiles B, C, D, E)}{10}{subsection.5.6}%
+\contentsline {subsection}{\numberline {5.7}Contactos y Proveedores}{10}{subsection.5.7}%
+\contentsline {subsection}{\numberline {5.8}Inventario (Perfiles C, D, E)}{11}{subsection.5.8}%
+\contentsline {subsection}{\numberline {5.9}Punto de Venta (Perfiles D, E)}{11}{subsection.5.9}%
+\contentsline {subsection}{\numberline {5.10}Máquina Fiscal (Perfil E)}{11}{subsection.5.10}%
+\contentsline {section}{\numberline {6}Checklist de Homologación SENIAT}{12}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Requisitos de la Factura (Art.\ 57 Ley IVA + Providencia 0071)}{12}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Comprobantes de Retención (Contribuyentes Especiales)}{12}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Guía de Despacho}{12}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Validación de RIF}{13}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}Control de Numeración}{13}{subsection.6.5}%
+\contentsline {section}{\numberline {7}Go-Live Checklist}{14}{section.7}%
+\contentsline {section}{\numberline {8}Referencia de Módulos por Capa}{15}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Capa 0 — Infraestructura Base}{15}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Capa 1 — Datos Geográficos y Contactos}{15}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Capa 2 — Contabilidad Core}{15}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Capa 3 — Facturación y Secuencias}{15}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Capa 4 — Retenciones e Impuestos Especiales}{16}{subsection.8.5}%
+\contentsline {subsection}{\numberline {8.6}Capa 5 — Inventario y Logística}{16}{subsection.8.6}%
+\contentsline {subsection}{\numberline {8.7}Capa 6 — Ventas, Compras y POS}{16}{subsection.8.7}%
+\contentsline {subsection}{\numberline {8.8}Capa 7 — Máquinas Fiscales e IoT}{17}{subsection.8.8}%
+\contentsline {subsection}{\numberline {8.9}Capa 8 — Módulos Opcionales}{17}{subsection.8.9}%
+\contentsline {section}{\numberline {9}Árbol de Dependencias}{18}{section.9}%
+\contentsline {section}{\numberline {10}Cobertura de la Localización}{19}{section.10}%
+\contentsline {section}{\numberline {11}Checklist de Pruebas por Módulo}{20}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Plan de cuentas oficial Odoo 19 (\texttt {l10n\_ve} core)}{20}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}\texttt {\textcolor {naranja}{l10n\_ve\_base}}}{20}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}\texttt {\textcolor {naranja}{l10n\_ve\_rate}}}{20}{subsection.11.3}%
+\contentsline {subsection}{\numberline {11.4}\texttt {\textcolor {naranja}{l10n\_ve\_location}}}{20}{subsection.11.4}%
+\contentsline {subsection}{\numberline {11.5}\texttt {\textcolor {naranja}{l10n\_ve\_contact}}}{20}{subsection.11.5}%
+\contentsline {subsection}{\numberline {11.6}\texttt {\textcolor {naranja}{od\_journal\_sequence}}}{20}{subsection.11.6}%
+\contentsline {subsection}{\numberline {11.7}\texttt {\textcolor {naranja}{l10n\_ve\_accountant}}}{20}{subsection.11.7}%
+\contentsline {subsection}{\numberline {11.8}\texttt {\textcolor {naranja}{l10n\_ve\_invoice}}}{21}{subsection.11.8}%
+\contentsline {subsection}{\numberline {11.9}\texttt {\textcolor {naranja}{l10n\_ve\_tax\_payer}}}{21}{subsection.11.9}%
+\contentsline {subsection}{\numberline {11.10}\texttt {\textcolor {naranja}{l10n\_ve\_payment\_extension}}}{21}{subsection.11.10}%
+\contentsline {subsection}{\numberline {11.11}\texttt {\textcolor {naranja}{l10n\_ve\_igtf}}}{21}{subsection.11.11}%
+\contentsline {subsection}{\numberline {11.12}\texttt {\textcolor {naranja}{l10n\_ve\_filter\_partner}}}{21}{subsection.11.12}%
+\contentsline {subsection}{\numberline {11.13}\texttt {\textcolor {naranja}{l10n\_ve\_stock}}}{22}{subsection.11.13}%
+\contentsline {subsection}{\numberline {11.14}\texttt {\textcolor {naranja}{l10n\_ve\_sale}}}{22}{subsection.11.14}%
+\contentsline {subsection}{\numberline {11.15}\texttt {\textcolor {naranja}{l10n\_ve\_purchase}}}{22}{subsection.11.15}%
+\contentsline {subsection}{\numberline {11.16}\texttt {\textcolor {naranja}{l10n\_ve\_stock\_purchase}}}{22}{subsection.11.16}%
+\contentsline {subsection}{\numberline {11.17}\texttt {\textcolor {naranja}{l10n\_ve\_stock\_account}}}{22}{subsection.11.17}%
+\contentsline {subsection}{\numberline {11.18}\texttt {\textcolor {naranja}{l10n\_ve\_stock\_reports}}}{22}{subsection.11.18}%
+\contentsline {subsection}{\numberline {11.19}\texttt {\textcolor {naranja}{l10n\_ve\_pos}}}{22}{subsection.11.19}%
+\contentsline {subsection}{\numberline {11.20}\texttt {\textcolor {naranja}{l10n\_ve\_pos\_igtf}}}{22}{subsection.11.20}%
+\contentsline {subsection}{\numberline {11.21}\texttt {\textcolor {naranja}{account\_fiscal\_year\_closing}}}{22}{subsection.11.21}%
+\contentsline {subsection}{\numberline {11.22}\texttt {\textcolor {naranja}{l10n\_ve\_account\_fiscalyear\_closing}}}{22}{subsection.11.22}%
+\contentsline {subsection}{\numberline {11.23}\texttt {\textcolor {naranja}{l10n\_ve\_fiscal\_lock\_days}}}{23}{subsection.11.23}%
+\contentsline {subsection}{\numberline {11.24}\texttt {\textcolor {naranja}{l10n\_ve\_ref\_bank}}}{23}{subsection.11.24}%
+\contentsline {subsection}{\numberline {11.25}\texttt {\textcolor {naranja}{l10n\_ve\_suggested\_amount}}}{23}{subsection.11.25}%
+\contentsline {subsection}{\numberline {11.26}\texttt {\textcolor {naranja}{l10n\_ve\_auditlog}}}{23}{subsection.11.26}%
+\contentsline {subsection}{\numberline {11.27}\texttt {\textcolor {naranja}{l10n\_ve\_donation}}}{23}{subsection.11.27}%
+\contentsline {subsection}{\numberline {11.28}\texttt {\textcolor {naranja}{l10n\_ve\_iot\_mf}} (requiere hardware TFHKA)}{23}{subsection.11.28}%
+\contentsline {subsection}{\numberline {11.29}\texttt {\textcolor {naranja}{l10n\_ve\_invoice\_digital}} (requiere \texttt {\textcolor {naranja}{l10n\_ve\_iot\_mf}})}{23}{subsection.11.29}%
+\contentsline {subsection}{\numberline {11.30}\texttt {\textcolor {naranja}{l10n\_ve\_pos\_mf}} (requiere \texttt {\textcolor {naranja}{l10n\_ve\_iot\_mf}} + \texttt {\textcolor {naranja}{l10n\_ve\_pos}})}{23}{subsection.11.30}%
